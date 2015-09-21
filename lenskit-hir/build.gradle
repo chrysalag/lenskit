@@ -33,20 +33,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-rootProject.name = 'lenskit'
+apply from: "$rootDir/gradle/maven.gradle"
+apply from: "$rootDir/gradle/test-utils.gradle"
 
-include 'lenskit-test'
-include 'lenskit-data-structures'
-include 'lenskit-api'
-include 'lenskit-specs'
-include 'lenskit-core', 'lenskit-groovy'
-include 'lenskit-eval'
-include 'lenskit-gradle'
-include 'lenskit-knn', 'lenskit-svd', 'lenskit-slopeone', 'lenskit-predict', 'lenskit-hir'
-include 'lenskit-all'
-include 'lenskit-cli'
-include 'lenskit-integration-tests'
-include 'dist'
-include 'lenskit-hir'
-include 'lenskit-hir'
+dependencies {
+    compile project(':lenskit-core')
+    compile project(':lenskit-knn')
+}
 
+meta {
+    name 'LensKit HIR'
+    description 'HIR recommenders for LensKit'
+}
