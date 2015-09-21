@@ -84,7 +84,7 @@ public class HIRModelDataAccumulator {
     }
 
     /**
-     * @return A matrix of item deviation and corating values to be used by
+     * @return A matrix of item corating values to be used by
      *         a {@code HIRItemScorer}.
      */
     public Long2ObjectMap<ImmutableSparseVector> buildMatrix() {
@@ -100,12 +100,18 @@ public class HIRModelDataAccumulator {
             for (VectorEntry e : vec) {
                 int coratings = (int)vec.getChannelVector(HIRModel.CORATINGS_SYMBOL).get(e);
 
-                if (vec.sum() == 0){
-                    vec.set(e, 1/vec.size());
-                } else {
-                    vec.set(e, coratings/vec.sum());
-                }
+                vec.set(e, coratings);
+            }
+        }
 
+        for (MutableSparseVector vec : workMatrix.values()) {
+            for (VectorEntry e : vec) {
+                double coratingsValue = e.getValue();
+                if (vec.sum() == 0) {
+                    vec.set(e, 1 / vec.size());
+                } else {
+                    vec.set(e, coratingsValue / vec.sum());
+                }
             }
         }
 
