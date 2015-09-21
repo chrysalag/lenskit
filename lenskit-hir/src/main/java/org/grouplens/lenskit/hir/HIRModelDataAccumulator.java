@@ -100,7 +100,12 @@ public class HIRModelDataAccumulator {
             for (VectorEntry e : vec) {
                 int coratings = (int)vec.getChannelVector(HIRModel.CORATINGS_SYMBOL).get(e);
 
-                vec.set(e, coratings/vec.sum());
+                if (vec.sum() == 0){
+                    vec.set(e, 1/vec.size());
+                } else {
+                    vec.set(e, coratings/vec.sum());
+                }
+
             }
         }
 
