@@ -24,13 +24,13 @@ import com.google.auto.service.AutoService;
 import com.google.common.base.Stopwatch;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.Namespace;
-import org.grouplens.lenskit.ItemRecommender;
-import org.grouplens.lenskit.RecommenderBuildException;
-import org.grouplens.lenskit.core.LenskitRecommender;
-import org.grouplens.lenskit.core.LenskitRecommenderEngine;
-import org.grouplens.lenskit.data.dao.ItemNameDAO;
-import org.grouplens.lenskit.scored.ScoredId;
-import org.grouplens.lenskit.symbols.Symbol;
+import org.lenskit.api.RecommenderBuildException;
+import org.lenskit.data.dao.ItemNameDAO;
+import org.lenskit.LenskitRecommender;
+import org.lenskit.LenskitRecommenderEngine;
+import org.lenskit.api.ItemRecommender;
+import org.lenskit.api.Result;
+import org.lenskit.api.ResultList;
 import org.lenskit.cli.Command;
 import org.lenskit.cli.util.InputData;
 import org.lenskit.cli.util.RecommenderLoader;
@@ -69,42 +69,30 @@ public class Recommend implements Command {
         List<Long> users = ctx.options.get("users");
         final int n = ctx.options.getInt("num_recs");
 
-        LenskitRecommender rec = engine.createRecommender();
-        ItemRecommender irec = rec.getItemRecommender();
-        ItemNameDAO indao = rec.get(ItemNameDAO.class);
-        if (irec == null) {
-            logger.error("recommender has no item recommender");
-            throw new UnsupportedOperationException("no item recommender");
-        }
-
-        logger.info("recommending for {} users", users.size());
-        Symbol pchan = getPrintChannel(ctx);
-        Stopwatch timer = Stopwatch.createStarted();
-        for (long user: users) {
-            List<ScoredId> recs = irec.recommend(user, n);
-            System.out.format("recommendations for user %d:%n", user);
-            for (ScoredId item: recs) {
-                System.out.format("  %d", item.getId());
-                if (indao != null) {
-                    System.out.format(" (%s)", indao.getItemName(item.getId()));
-                }
-                System.out.format(": %.3f", item.getScore());
-                if (pchan != null && item.hasUnboxedChannel(pchan)) {
-                    System.out.format(" (%f)", item.getUnboxedChannelValue(pchan));
-                }
-                System.out.println();
+        try (LenskitRecommender rec = engine.createRecommender()) {
+            ItemRecommender irec = rec.getItemRecommender();
+            ItemNameDAO indao = rec.get(ItemNameDAO.class);
+            if (irec == null) {
+                logger.error("recommender has no item recommender");
+                throw new UnsupportedOperationException("no item recommender");
             }
-        }
-        timer.stop();
-        logger.info("recommended for {} users in {}", users.size(), timer);
-    }
 
-    Symbol getPrintChannel(Context ctx) {
-        String name = ctx.options.get("print_channel");
-        if (name == null) {
-            return null;
-        } else {
-            return Symbol.of(name);
+            logger.info("recommending for {} users", users.size());
+            Stopwatch timer = Stopwatch.createStarted();
+            for (long user : users) {
+                ResultList recs = irec.recommendWithDetails(user, n, null, null);
+                System.out.format("recommendations for user %d:%n", user);
+                for (Result item : recs) {
+                    System.out.format("  %d", item.getId());
+                    if (indao != null) {
+                        System.out.format(" (%s)", indao.getItemName(item.getId()));
+                    }
+                    System.out.format(": %.3f", item.getScore());
+                    System.out.println();
+                }
+            }
+            timer.stop();
+            logger.info("recommended for {} users in {}", users.size(), timer);
         }
     }
 
@@ -118,9 +106,6 @@ public class Recommend implements Command {
               .setDefault(10)
               .metavar("N")
               .help("generate up to N recommendations per user");
-        parser.addArgument("--print-channel")
-              .metavar("CHAN")
-              .help("also print value from CHAN");
         parser.addArgument("users")
               .type(Long.class)
               .nargs("+")

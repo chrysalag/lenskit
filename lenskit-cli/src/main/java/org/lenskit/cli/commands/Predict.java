@@ -22,18 +22,13 @@ package org.lenskit.cli.commands;
 
 import com.google.auto.service.AutoService;
 import com.google.common.base.Stopwatch;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.Namespace;
-import org.grouplens.lenskit.RatingPredictor;
-import org.grouplens.lenskit.RecommenderBuildException;
-import org.grouplens.lenskit.core.LenskitRecommender;
-import org.grouplens.lenskit.core.LenskitRecommenderEngine;
-import org.grouplens.lenskit.data.dao.ItemNameDAO;
-import org.grouplens.lenskit.symbols.Symbol;
-import org.grouplens.lenskit.symbols.TypedSymbol;
-import org.grouplens.lenskit.vectors.SparseVector;
-import org.grouplens.lenskit.vectors.VectorEntry;
+import org.lenskit.api.RecommenderBuildException;
+import org.lenskit.data.dao.ItemNameDAO;
+import org.lenskit.LenskitRecommender;
+import org.lenskit.LenskitRecommenderEngine;
+import org.lenskit.api.RatingPredictor;
 import org.lenskit.cli.Command;
 import org.lenskit.cli.util.InputData;
 import org.lenskit.cli.util.RecommenderLoader;
@@ -43,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Predict item ratings for a user.
@@ -73,48 +69,28 @@ public class Predict implements Command {
         long user = ctx.options.getLong("user");
         List<Long> items = ctx.options.get("items");
 
-        LenskitRecommender rec = engine.createRecommender();
-        RatingPredictor pred = rec.getRatingPredictor();
-        ItemNameDAO names = rec.get(ItemNameDAO.class);
-        if (pred == null) {
-            logger.error("recommender has no rating predictor");
-            throw new UnsupportedOperationException("no rating predictor");
-        }
+        try (LenskitRecommender rec = engine.createRecommender()) {
+            RatingPredictor pred = rec.getRatingPredictor();
+            ItemNameDAO names = rec.get(ItemNameDAO.class);
+            if (pred == null) {
+                logger.error("recommender has no rating predictor");
+                throw new UnsupportedOperationException("no rating predictor");
+            }
 
-        logger.info("predicting {} items", items.size());
-        Symbol pchan = getPrintChannel(ctx);
-        Stopwatch timer = Stopwatch.createStarted();
-        SparseVector preds = pred.predict(user, items);
-        Long2ObjectMap channel = null;
-        if (pchan != null) {
-            for (TypedSymbol sym: preds.getChannelSymbols()) {
-                if (sym.getRawSymbol().equals(pchan)) {
-                    channel = preds.getChannel(sym);
+            logger.info("predicting {} items", items.size());
+            Stopwatch timer = Stopwatch.createStarted();
+            Map<Long, Double> preds = pred.predict(user, items);
+            System.out.format("predictions for user %d:%n", user);
+            for (Map.Entry<Long, Double> e : preds.entrySet()) {
+                System.out.format("  %d", e.getKey());
+                if (names != null) {
+                    System.out.format(" (%s)", names.getItemName(e.getKey()));
                 }
+                System.out.format(": %.3f", e.getValue());
+                System.out.println();
             }
-        }
-        System.out.format("predictions for user %d:%n", user);
-        for (VectorEntry e: preds) {
-            System.out.format("  %d", e.getKey());
-            if (names != null) {
-                System.out.format(" (%s)", names.getItemName(e.getKey()));
-            }
-            System.out.format(": %.3f", e.getValue());
-            if (channel != null) {
-                System.out.format(" (%s)", channel.get(e.getKey()));
-            }
-            System.out.println();
-        }
-        timer.stop();
-        logger.info("predicted for {} items in {}", items.size(), timer);
-    }
-
-    Symbol getPrintChannel(Context ctx) {
-        String name = ctx.options.get("print_channel");
-        if (name == null) {
-            return null;
-        } else {
-            return Symbol.of(name);
+            timer.stop();
+            logger.info("predicted for {} items in {}", items.size(), timer);
         }
     }
 
@@ -123,9 +99,6 @@ public class Predict implements Command {
         InputData.configureArguments(parser);
         ScriptEnvironment.configureArguments(parser);
         RecommenderLoader.configureArguments(parser);
-        parser.addArgument("--print-channel")
-              .metavar("CHAN")
-              .help("also print value from CHAN");
         parser.addArgument("user")
               .type(Long.class)
               .metavar("USER")

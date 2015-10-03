@@ -24,9 +24,8 @@ import org.grouplens.grapht.Component;
 import org.grouplens.grapht.Dependency;
 import org.grouplens.grapht.InjectionException;
 import org.grouplens.grapht.graph.DAGNode;
-import org.grouplens.lenskit.RecommenderBuildException;
-import org.grouplens.lenskit.core.LenskitConfiguration;
-import org.grouplens.lenskit.inject.StaticInjector;
+import org.lenskit.api.RecommenderBuildException;
+import org.lenskit.inject.StaticInjector;
 import org.lenskit.api.ItemRecommender;
 import org.lenskit.api.ItemScorer;
 import org.lenskit.api.RatingPredictor;
@@ -71,7 +70,7 @@ public class LenskitRecommender implements Recommender {
      */
     public <T> T get(Class<T> cls) {
         try {
-            return injector.getInstance(cls);
+            return injector.tryGetInstance(cls);
         } catch (InjectionException e) {
             throw new RuntimeException("error instantiating component", e);
         }
@@ -90,7 +89,7 @@ public class LenskitRecommender implements Recommender {
      */
     public <T> T get(Class<? extends Annotation> qual, Class<T> cls) {
         try {
-            return injector.getInstance(qual, cls);
+            return injector.tryGetInstance(qual, cls);
         } catch (InjectionException e) {
             throw new RuntimeException("error instantiating component", e);
         }
