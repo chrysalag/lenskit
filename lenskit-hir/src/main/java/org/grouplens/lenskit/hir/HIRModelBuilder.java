@@ -23,9 +23,9 @@ package org.grouplens.lenskit.hir;
 
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongSet;
-import org.grouplens.lenskit.core.Transient;
-import org.grouplens.lenskit.data.dao.ItemDAO;
-import org.grouplens.lenskit.knn.item.model.ItemItemBuildContext;
+import org.lenskit.inject.Transient;
+import org.lenskit.data.dao.ItemDAO;
+import org.lenskit.knn.item.model.ItemItemBuildContext;
 import org.grouplens.lenskit.vectors.SparseVector;
 
 import javax.annotation.Nonnull;
@@ -33,7 +33,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 /**
- * Created by chrysalag on 29.08.15.
+ * Created by chrysalag. Provider of HIR Model.
  */
 public class HIRModelBuilder implements Provider<HIRModel> {
 

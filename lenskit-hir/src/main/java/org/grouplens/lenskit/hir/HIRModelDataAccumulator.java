@@ -26,13 +26,13 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import org.apache.commons.lang3.tuple.Pair;
-import org.grouplens.lenskit.data.dao.ItemDAO;
+import org.lenskit.data.dao.ItemDAO;
 import org.grouplens.lenskit.vectors.*;
 
 import java.util.Map;
 
 /**
- * Created by chrysalag on 29.08.15.
+ * Created by chrysalag. Processes ratings and generates data for HIR Item Scorer.
  */
 
 public class HIRModelDataAccumulator {
@@ -55,7 +55,7 @@ public class HIRModelDataAccumulator {
         while (iter.hasNext()) {
             long item = iter.nextLong();
             workMatrix.put(item, MutableSparseVector.create(items));
-            workMatrix.get(item).addChannelVector(HIRModel.CORATINGS_SYMBOL);
+            workMatrix.get(item).addChannelVector(HIRModel.CORATING_SYMBOL);
         }
     }
 
@@ -79,7 +79,7 @@ public class HIRModelDataAccumulator {
                 coratings++;
             }
 
-            workMatrix.get(id1).getChannelVector(HIRModel.CORATINGS_SYMBOL).set(id2, coratings);
+            workMatrix.get(id1).getChannelVector(HIRModel.CORATING_SYMBOL).set(id2, coratings);
         }
     }
 
@@ -94,23 +94,15 @@ public class HIRModelDataAccumulator {
         }
 
         Long2ObjectMap<ImmutableSparseVector> matrix =
-                new Long2ObjectOpenHashMap<ImmutableSparseVector>(workMatrix.size());
+                new Long2ObjectOpenHashMap<>(workMatrix.size());
 
         for (MutableSparseVector vec : workMatrix.values()) {
             for (VectorEntry e : vec) {
-                int coratings = (int)vec.getChannelVector(HIRModel.CORATINGS_SYMBOL).get(e);
-
-                vec.set(e, coratings);
-            }
-        }
-
-        for (MutableSparseVector vec : workMatrix.values()) {
-            for (VectorEntry e : vec) {
-                double coratingsValue = e.getValue();
-                if (vec.sum() == 0) {
+                int coratings = (int)vec.getChannelVector(HIRModel.CORATING_SYMBOL).get(e);
+                if (coratings == 0) {
                     vec.set(e, 1 / vec.size());
                 } else {
-                    vec.set(e, coratingsValue / vec.sum());
+                    vec.set(e, coratings/vec.size());
                 }
             }
         }

@@ -23,7 +23,7 @@ package org.grouplens.lenskit.hir;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import org.grouplens.grapht.annotation.DefaultProvider;
-import org.grouplens.lenskit.core.Shareable;
+import org.lenskit.inject.Shareable;
 import org.grouplens.lenskit.symbols.Symbol;
 import org.grouplens.lenskit.vectors.ImmutableSparseVector;
 import org.grouplens.lenskit.vectors.SparseVector;
@@ -31,7 +31,7 @@ import org.grouplens.lenskit.vectors.SparseVector;
 import java.io.Serializable;
 
 /**
- * Created by chrysalag on 29.08.15.
+ * Created by chrysalag. Implements the Model of HIR algorithm.
  */
 
 @DefaultProvider(HIRModelBuilder.class)
@@ -42,7 +42,7 @@ public class HIRModel implements Serializable {
 
     private final Long2ObjectMap<ImmutableSparseVector> matrix;
 
-    public static final Symbol CORATINGS_SYMBOL = Symbol.of("coratings");
+    public static final Symbol CORATING_SYMBOL = Symbol.of("coratings");
 
     public HIRModel(Long2ObjectMap<ImmutableSparseVector> matrix) { this.matrix = matrix; }
 
@@ -56,7 +56,7 @@ public class HIRModel implements Serializable {
                 return 0;
             }
             else {
-                double coratings = row.getChannelVector(CORATINGS_SYMBOL).get(item2, 0);
+                double coratings = row.getChannelVector(CORATING_SYMBOL).get(item2, 0);
                 return (int) coratings;
             }
         }
@@ -66,7 +66,7 @@ public class HIRModel implements Serializable {
                 return 0;
             }
             else {
-                double coratings = row.getChannelVector(CORATINGS_SYMBOL).get(item1, 0);
+                double coratings = row.getChannelVector(CORATING_SYMBOL).get(item1, 0);
                 return (int) coratings;
             }
         }

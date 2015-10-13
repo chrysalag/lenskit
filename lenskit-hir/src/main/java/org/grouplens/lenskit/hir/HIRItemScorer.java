@@ -22,27 +22,34 @@
 package org.grouplens.lenskit.hir;
 
 /**
- * Created by chrysalag on 29.08.15.
+ * Created by chrysalag. Implements the Item Scorer of HIR algorithm.
  */
 
 import it.unimi.dsi.fastutil.longs.LongIterator;
-import org.grouplens.lenskit.basic.AbstractItemScorer;
-import org.grouplens.lenskit.data.dao.UserEventDAO;
-import org.grouplens.lenskit.data.event.Rating;
-import org.grouplens.lenskit.data.history.History;
+import it.unimi.dsi.fastutil.longs.LongIterators;
+import org.lenskit.api.Result;
+import org.lenskit.api.ResultMap;
+import org.lenskit.basic.AbstractItemScorer;
+import org.lenskit.data.dao.UserEventDAO;
+import org.lenskit.data.ratings.Rating;
+import org.lenskit.data.history.History;
 import org.grouplens.lenskit.data.history.RatingVectorUserHistorySummarizer;
-import org.grouplens.lenskit.data.history.UserHistory;
-import org.grouplens.lenskit.data.pref.PreferenceDomain;
-import org.grouplens.lenskit.vectors.MutableSparseVector;
+import org.lenskit.data.history.UserHistory;
+import org.lenskit.data.ratings.PreferenceDomain;
 import org.grouplens.lenskit.vectors.SparseVector;
 import org.grouplens.lenskit.vectors.VectorEntry;
+import org.lenskit.api.ItemScorer;
+import org.lenskit.results.Results;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
- * An {@link org.grouplens.lenskit.ItemScorer} that implements the HIR algorithm.
+ * An {@link ItemScorer} that implements the HIR algorithm.
  */
 
 public class HIRItemScorer extends AbstractItemScorer{
@@ -60,43 +67,40 @@ public class HIRItemScorer extends AbstractItemScorer{
         domain = dom;
     }
 
-    @Override
-    public void score(long uid, @Nonnull MutableSparseVector scores) {
-        UserHistory<Rating> history = dao.getEventsForUser(uid, Rating.class);
-        if (history == null) {
-            history = History.forUser(uid);
-        }
-        SparseVector user = RatingVectorUserHistorySummarizer.makeRatingVector(history);
 
-        for (VectorEntry e : scores.view(VectorEntry.State.EITHER)) {
-            final long predicteeItem = e.getKey();
-            if (!user.containsKey(predicteeItem)) {
+    @Nonnull
+    @Override
+    public ResultMap scoreWithDetails(long user, @Nonnull Collection<Long> items) {
+        UserHistory<Rating> history = dao.getEventsForUser(user, Rating.class);
+        if (history == null) {
+            history = History.forUser(user);
+        }
+        SparseVector userVector = RatingVectorUserHistorySummarizer.makeRatingVector(history);
+
+        List<Result> results = new ArrayList<>();
+        LongIterator iter = LongIterators.asLongIterator(items.iterator());
+
+        while (iter.hasNext()) {
+            final long predicteeItem = iter.nextLong();
+            if (!userVector.containsKey(predicteeItem)) {
                 double total = 0;
                 int nitems = 0;
-                LongIterator ratingIter = user.keySet().iterator();
-                while (ratingIter.hasNext()) {
-                    long currentItem = ratingIter.nextLong();
+                for (VectorEntry e: userVector) {
+                    long currentItem = e.getKey();
                     int nusers = model.getCoratings(predicteeItem, currentItem);
                     if (nusers != 0) {
                         nitems++;
                     }
                 }
-                if (nitems != 0) {
-                    double predValue = total / nitems;
-                    if (domain != null) {
-                        predValue = domain.clampValue(predValue);
-                    }
-                    scores.set(e, predValue);
-                } else {
-                    scores.unset(e);
-                }
             }
         }
+
+
+        return Results.newResultMap(results);
     }
 
     public HIRModel getModel() {
         return model;
     }
-
 
 }
