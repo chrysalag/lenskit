@@ -36,4 +36,6 @@ public interface ItemDAO {
      * @return The set of known item IDs.
      */
     LongSet getItemIds();
+
+    int getGenreSize();
 }
