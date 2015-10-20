@@ -27,6 +27,9 @@ package org.grouplens.lenskit.hir;
 
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongIterators;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealVector;
+import org.grouplens.lenskit.vectors.MutableSparseVector;
 import org.lenskit.api.Result;
 import org.lenskit.api.ResultMap;
 import org.lenskit.basic.AbstractItemScorer;
@@ -52,55 +55,74 @@ import java.util.List;
  * An {@link ItemScorer} that implements the HIR algorithm.
  */
 
-public class HIRItemScorer extends AbstractItemScorer{
+public class HIRItemScorer extends AbstractItemScorer {
 
     protected final UserEventDAO dao;
     protected HIRModel model;
     protected final PreferenceDomain domain;
+    //protected double directAssociation;
+    //protected double proximity;
 
     @Inject
     public HIRItemScorer(UserEventDAO dao,
                          HIRModel model,
-                         @Nullable PreferenceDomain dom) {
+                         @Nullable PreferenceDomain dom
+                         //,@DirectAssociationParameter double direct,
+                         //@ProximityParameter double prox
+                         ) {
         this.dao = dao;
         this.model = model;
         domain = dom;
+        //directAssociation = direct;
+        //proximity = prox;
     }
-
 
     @Nonnull
     @Override
     public ResultMap scoreWithDetails(long user, @Nonnull Collection<Long> items) {
+
         UserHistory<Rating> history = dao.getEventsForUser(user, Rating.class);
         if (history == null) {
             history = History.forUser(user);
         }
-        SparseVector userVector = RatingVectorUserHistorySummarizer.makeRatingVector(history);
+        SparseVector preferenceVector = RatingVectorUserHistorySummarizer.makeRatingVector(history);
+
+        //double preferenceInResults = 1 - directAssociation - proximity;
+        //MutableSparseVector prefernceVec = preferenceVector.mutableCopy();
+        //prefernceVec.multiply(preferenceInResults);
 
         List<Result> results = new ArrayList<>();
         LongIterator iter = LongIterators.asLongIterator(items.iterator());
-
         while (iter.hasNext()) {
             final long predicteeItem = iter.nextLong();
-            if (!userVector.containsKey(predicteeItem)) {
+            if (!preferenceVector.containsKey(predicteeItem)) {
                 double total = 0;
                 int nitems = 0;
-                for (VectorEntry e: userVector) {
+                for (VectorEntry e: preferenceVector) {
                     long currentItem = e.getKey();
+                    double entryValuec = e.getValue();
+
                     int nusers = model.getCoratings(predicteeItem, currentItem);
                     if (nusers != 0) {
+                        //double currentDev = model.getDeviation(predicteeItem, currentItem);
+                        //total += currentDev + e.getValue();
                         nitems++;
                     }
                 }
+                if (nitems != 0) {
+                    double predValue = total / nitems;
+                    if (domain != null) {
+                        predValue = domain.clampValue(predValue);
+                    }
+                    results.add(Results.create(predicteeItem, predValue));
+                }
             }
         }
-
-
         return Results.newResultMap(results);
     }
 
     public HIRModel getModel() {
         return model;
     }
-
 }
+

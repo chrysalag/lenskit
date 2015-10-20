@@ -26,8 +26,12 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
 import org.lenskit.data.dao.ItemDAO;
 import org.grouplens.lenskit.vectors.*;
+import org.lenskit.data.dao.ItemGenreDAO;
 
 import java.util.Map;
 
@@ -39,23 +43,42 @@ public class HIRModelDataAccumulator {
 
     private Long2ObjectMap<MutableSparseVector> workMatrix;
 
+    private RealMatrix prepareGenresMatrix;
+
+    private RealMatrix rowStochastic;
+
+    private RealMatrix transposed;
+
+    protected double directAssociation;
+
+    protected double proximity;
+
     /**
      * Creates an accumulator to process rating data and generate the necessary data for
      * a {@code HIRItemScorer}.
      *
      * @param dao       The DataAccessObject interfacing with the data for the model
      */
-
-
-    public HIRModelDataAccumulator(ItemDAO dao) {
+    public HIRModelDataAccumulator(ItemDAO dao,
+                                   ItemGenreDAO gDao,
+                                   double directAssociation,
+                                   double proximity) {
         LongSet items = dao.getItemIds();
+        int genreSize = dao.getGenreSize();
 
-        workMatrix = new Long2ObjectOpenHashMap<>(items.size());
+        workMatrix = new Long2ObjectOpenHashMap<MutableSparseVector>(items.size());
+        prepareGenresMatrix = MatrixUtils.createRealMatrix(items.size(), genreSize);
+        rowStochastic = MatrixUtils.createRealMatrix(items.size(), genreSize);
+        transposed = MatrixUtils.createRealMatrix(genreSize, items.size());
+        this.directAssociation = directAssociation;
+        this.proximity = proximity;
+
+
         LongIterator iter = items.iterator();
         while (iter.hasNext()) {
             long item = iter.nextLong();
             workMatrix.put(item, MutableSparseVector.create(items));
-            workMatrix.get(item).addChannelVector(HIRModel.CORATING_SYMBOL);
+            prepareGenresMatrix.setRowVector((int) item, gDao.getItemGenre(item));
         }
     }
 
@@ -67,7 +90,6 @@ public class HIRModelDataAccumulator {
      * @param id2      The id of the second item.
      * @param itemVec2 The rating vector of the second item.
      */
-
     public void putItemPair(long id1, SparseVector itemVec1, long id2, SparseVector itemVec2) {
         if (workMatrix == null) {
             throw new IllegalStateException("Model is already built");
@@ -78,8 +100,7 @@ public class HIRModelDataAccumulator {
             for (Pair<VectorEntry,VectorEntry> pair: Vectors.fastIntersect(itemVec1, itemVec2)) {
                 coratings++;
             }
-
-            workMatrix.get(id1).getChannelVector(HIRModel.CORATING_SYMBOL).set(id2, coratings);
+            workMatrix.get(id1).set(id2, coratings);
         }
     }
 
@@ -93,19 +114,32 @@ public class HIRModelDataAccumulator {
             throw new IllegalStateException("Model is already built");
         }
 
+        //LongSet items = dao.getItemIds();
+
         Long2ObjectMap<ImmutableSparseVector> matrix =
-                new Long2ObjectOpenHashMap<>(workMatrix.size());
+                new Long2ObjectOpenHashMap<ImmutableSparseVector>(workMatrix.size());
 
         for (MutableSparseVector vec : workMatrix.values()) {
-            for (VectorEntry e : vec) {
-                int coratings = (int)vec.getChannelVector(HIRModel.CORATING_SYMBOL).get(e);
-                if (coratings == 0) {
-                    vec.set(e, 1 / vec.size());
-                } else {
-                    vec.set(e, coratings/vec.size());
-                }
+            double sum = vec.sum();
+            if ( sum != 0 ) {
+                vec.multiply(1/sum);
             }
         }
+
+        /*
+        LongIterator iter = items.iterator();
+        while (iter.hasNext()) {
+            long item = iter.nextLong();
+            RealVector itemRow = workMatrix.getRowVector((int) item);
+            double sum = itemRow.getL1Norm();
+            if (sum !=0) {
+                itemRow.mapDivide(sum);
+            }
+        }
+
+
+        RealMatrix matrix = workMatrix.copy();
+        */
 
         for (Map.Entry<Long, MutableSparseVector> e : workMatrix.entrySet()) {
             matrix.put(e.getKey(), e.getValue().freeze());
@@ -115,4 +149,43 @@ public class HIRModelDataAccumulator {
         return matrix;
     }
 
+    public RealMatrix RowStochastic() {
+
+        rowStochastic = prepareGenresMatrix.copy();
+
+        int itemsSize = rowStochastic.getRowDimension();
+
+        for (int i = 0; i < itemsSize; i++) {
+            RealVector forIter = rowStochastic.getRowVector(i);
+
+            double sum = forIter.getL1Norm();
+
+            RealVector stochasticRow = forIter.mapDivide(sum);
+
+            rowStochastic.setRowVector(i, stochasticRow);
+        }
+
+        return rowStochastic;
+
+    }
+
+    public RealMatrix ColumnStochastic() {
+
+        transposed = prepareGenresMatrix.transpose();
+
+        int itemsSize = transposed.getRowDimension();
+
+        for (int i = 0; i < itemsSize; i++) {
+            RealVector forIter = transposed.getRowVector(i);
+
+            double sum = forIter.getL1Norm();
+
+            RealVector stochasticRow = forIter.mapDivide(sum);
+
+            transposed.setRowVector(i, stochasticRow);
+        }
+
+        return transposed;
+
+    }
 }

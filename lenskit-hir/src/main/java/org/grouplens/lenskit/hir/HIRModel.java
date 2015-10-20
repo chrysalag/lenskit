@@ -22,6 +22,7 @@
 package org.grouplens.lenskit.hir;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.grouplens.grapht.annotation.DefaultProvider;
 import org.lenskit.inject.Shareable;
 import org.grouplens.lenskit.symbols.Symbol;
@@ -42,9 +43,17 @@ public class HIRModel implements Serializable {
 
     private final Long2ObjectMap<ImmutableSparseVector> matrix;
 
-    public static final Symbol CORATING_SYMBOL = Symbol.of("coratings");
+    private final RealMatrix rowStochastic;
 
-    public HIRModel(Long2ObjectMap<ImmutableSparseVector> matrix) { this.matrix = matrix; }
+    private final RealMatrix transposed;
+
+    public HIRModel(Long2ObjectMap<ImmutableSparseVector> matrix,
+                    RealMatrix rowStochastic,
+                    RealMatrix transposed) {
+        this.matrix = matrix;
+        this.rowStochastic = rowStochastic;
+        this.transposed = transposed;
+    }
 
     public int getCoratings(long item1, long item2) {
         if (item1 == item2) {
@@ -56,7 +65,7 @@ public class HIRModel implements Serializable {
                 return 0;
             }
             else {
-                double coratings = row.getChannelVector(CORATING_SYMBOL).get(item2, 0);
+                double coratings = row.get(item2, 0);
                 return (int) coratings;
             }
         }
@@ -66,7 +75,7 @@ public class HIRModel implements Serializable {
                 return 0;
             }
             else {
-                double coratings = row.getChannelVector(CORATING_SYMBOL).get(item1, 0);
+                double coratings = row.get(item1, 0);
                 return (int) coratings;
             }
         }
