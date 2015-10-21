@@ -54,5 +54,9 @@ public interface ItemGenreDAO {
     @Nullable
     RealVector getItemGenre(long item);
 
+    /**
+     * Get the number of genres in the dataset.
+     * @return the number of items in the dataset.
+     */
     int getGenreSize();
 }

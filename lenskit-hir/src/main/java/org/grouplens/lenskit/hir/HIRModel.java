@@ -25,7 +25,6 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.grouplens.grapht.annotation.DefaultProvider;
 import org.lenskit.inject.Shareable;
-import org.grouplens.lenskit.symbols.Symbol;
 import org.grouplens.lenskit.vectors.ImmutableSparseVector;
 import org.grouplens.lenskit.vectors.SparseVector;
 
@@ -41,18 +40,18 @@ public class HIRModel implements Serializable {
 
     private static final long serialVersionUID  = 1L;
 
-    private final Long2ObjectMap<ImmutableSparseVector> matrix;
+    private final Long2ObjectMap<ImmutableSparseVector> cmatrix;
 
-    private final RealMatrix rowStochastic;
+    private final RealMatrix xmatrix;
 
-    private final RealMatrix transposed;
+    private final RealMatrix ymatrix;
 
-    public HIRModel(Long2ObjectMap<ImmutableSparseVector> matrix,
-                    RealMatrix rowStochastic,
-                    RealMatrix transposed) {
-        this.matrix = matrix;
-        this.rowStochastic = rowStochastic;
-        this.transposed = transposed;
+    public HIRModel(Long2ObjectMap<ImmutableSparseVector> cmatrix,
+                    RealMatrix xmatrix,
+                    RealMatrix ymatrix) {
+        this.cmatrix = cmatrix;
+        this.xmatrix = xmatrix;
+        this.ymatrix = ymatrix;
     }
 
     public int getCoratings(long item1, long item2) {
@@ -60,7 +59,7 @@ public class HIRModel implements Serializable {
             return 0;
         }
         else if (item1 < item2) {
-            SparseVector row = matrix.get(item1);
+            SparseVector row = cmatrix.get(item1);
             if (row == null) {
                 return 0;
             }
@@ -70,7 +69,7 @@ public class HIRModel implements Serializable {
             }
         }
         else {
-            SparseVector row = matrix.get(item2);
+            SparseVector row = cmatrix.get(item2);
             if (row == null) {
                 return 0;
             }
@@ -80,4 +79,6 @@ public class HIRModel implements Serializable {
             }
         }
     }
+
+
 }

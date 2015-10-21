@@ -61,4 +61,18 @@ public interface ItemScorer {
      */
     @Nonnull
     ResultMap scoreWithDetails(long user, @Nonnull Collection<Long> items);
+
+
+    /**
+     * Score a collection of items and potentially return more details on the scores.
+     *
+     * @param user  The user ID for whom to generate scores.
+     * @param items The item to score.
+     * @param a Experimental parameter for direct association matrix.
+     * @param b Experimental parameter for indirect data.
+     * @return The scores for the items. This result set may not contain all requested items.  Implementations that
+     * support additional details will return a subclass of {@link ResultMap} that provides access to those details.
+     */
+/*    @Nonnull
+    ResultMap scoreWithDetails(long user, @Nonnull Collection<Long> items, double a, double b);*/
 }

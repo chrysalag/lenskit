@@ -22,6 +22,8 @@
 
 package org.lenskit.data.dao;
 
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealVector;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -74,7 +76,17 @@ public class MapItemGenreDAOTest {
     }
 
     @Test
+    public void testGenreVector() {
+        double[] testVec1 = {0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0};
+        double[] testVec2 = {0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0};
+        RealVector testRealVector1 = MatrixUtils.createRealVector(testVec1);
+        RealVector testRealVector2 = MatrixUtils.createRealVector(testVec2);
+        assertThat(gdao.getItemGenre(318), equalTo(testRealVector1));
+        assertThat(gdao.getItemGenre(104798), equalTo(testRealVector2));
+    }
+
+    @Test
     public void testItemIds() {
-        assertThat(gdao.getItemIds(), containsInAnyOrder(104798L, 318L, 2329L, 5475L, 7323L, 48394L, 48394L, 64716L));
+        assertThat(gdao.getItemIds(), containsInAnyOrder(318L, 2329L, 5475L, 7323L, 48394L, 64716L, 104798L));
     }
 }

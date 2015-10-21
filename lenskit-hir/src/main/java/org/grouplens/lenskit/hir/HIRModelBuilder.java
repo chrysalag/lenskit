@@ -23,6 +23,7 @@ package org.grouplens.lenskit.hir;
 
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongSet;
+import org.lenskit.data.dao.ItemGenreDAO;
 import org.lenskit.inject.Transient;
 import org.lenskit.data.dao.ItemDAO;
 import org.lenskit.knn.item.model.ItemItemBuildContext;
@@ -37,16 +38,25 @@ import javax.inject.Provider;
  */
 public class HIRModelBuilder implements Provider<HIRModel> {
 
-    private final HIRModelDataAccumulator accumulator;
+    private final DirectAssociationMatrix DAMatrix;
+
+    private final RowStochasticFactorOfProximity RSMatrix;
+
+    private final TransposedFactorOfProximity TFMatrix;
 
     private final ItemItemBuildContext buildContext;
 
     @Inject
     public HIRModelBuilder(@Transient @Nonnull ItemDAO dao,
+                           @Transient @Nonnull ItemGenreDAO gDao,
+                           @DirectAssociationParameter double direct,
+                           @ProximityParameter double prox,
                            @Transient ItemItemBuildContext context) {
 
         buildContext = context;
-        accumulator = new HIRModelDataAccumulator(dao);
+        DAMatrix = new DirectAssociationMatrix(dao);
+        RSMatrix = new RowStochasticFactorOfProximity(dao, gDao);
+        TFMatrix = new TransposedFactorOfProximity(dao, gDao);
     }
 
     @Override
@@ -61,11 +71,11 @@ public class HIRModelBuilder implements Provider<HIRModel> {
                 final long item2 = inner.nextLong();
                 if (item1 != item2) {
                     SparseVector vec2 = buildContext.itemVector(item2);
-                    accumulator.putItemPair(item1, vec1, item2, vec2);
+                    DAMatrix.putItemPair(item1, vec1, item2, vec2);
                 }
             }
         }
 
-        return new HIRModel(accumulator.buildMatrix());
+        return new HIRModel(DAMatrix.buildMatrix(), RSMatrix.RowStochastic(), TFMatrix.ColumnStochastic());
     }
 }

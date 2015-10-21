@@ -43,7 +43,9 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
- * Created by chrysalag.
+ * An item genre DAO backed by a map of item IDs to genres.
+ *
+ * @see org.lenskit.data.dao.ItemGenreDAO
  */
 
 public class MapItemGenreDAO implements ItemGenreDAO, ItemDAO, Serializable {
@@ -51,12 +53,11 @@ public class MapItemGenreDAO implements ItemGenreDAO, ItemDAO, Serializable {
     private static final long serialVersionUID = 1L;
     private final Map<Long, RealVector> itemGenreMap;
     private final LongSortedSet itemIds;
-    private final int genreSize;
+    private static int genreSize = 0;
 
-    public MapItemGenreDAO(Map<Long, RealVector> genres) {
-        itemGenreMap = ImmutableMap.copyOf(genres);
+    public MapItemGenreDAO(Map<Long, RealVector> items) {
+        itemGenreMap = ImmutableMap.copyOf(items);
         itemIds = LongUtils.packedSet(itemGenreMap.keySet());
-        genreSize = genres.values().size();
     }
 
     @Nullable
@@ -71,7 +72,6 @@ public class MapItemGenreDAO implements ItemGenreDAO, ItemDAO, Serializable {
         return itemGenreMap.get(item);
     }
 
-    @Nullable
     @Override
     public int getGenreSize() { return genreSize; }
 
@@ -107,12 +107,13 @@ public class MapItemGenreDAO implements ItemGenreDAO, ItemDAO, Serializable {
                 String genre = tok.nextToken();
                 if (genre != null) {
                     StrTokenizer gen = new StrTokenizer(genre, "|");
-                    int genresSize = gen.size();
-                    double[] genValues = new double[genresSize];
+                    genreSize = gen.size();
+                    double[] genValues = new double[genreSize];
                     int i = 0;
                     while (gen.hasNext()) {
                         double genValue = Double.parseDouble(gen.nextToken());
                         genValues[i] = genValue;
+                        i++;
                     }
                     RealVector genVec = MatrixUtils.createRealVector(genValues);
                     genres.put(item, genVec);
