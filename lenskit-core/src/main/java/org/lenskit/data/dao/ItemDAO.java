@@ -23,6 +23,8 @@ package org.lenskit.data.dao;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import org.grouplens.grapht.annotation.DefaultImplementation;
 
+import java.util.Set;
+
 /**
  * DAO for items. The base interface only exposes the set of item IDs.
  *
@@ -36,6 +38,4 @@ public interface ItemDAO {
      * @return The set of known item IDs.
      */
     LongSet getItemIds();
-
-    int getGenreSize();
 }
