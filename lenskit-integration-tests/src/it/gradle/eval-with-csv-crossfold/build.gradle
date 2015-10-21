@@ -27,7 +27,7 @@ task crossfold(type: Crossfold) {
         file ratingsFile
         delimiter "\t"
     }
-    outputFormat "PACK"
+    outputFormat "CSV_GZIP"
     partitionCount 5
     userPartitionMethod holdout(5)
     includeTimestamps false
@@ -40,7 +40,6 @@ task trainTest(type: TrainTest) {
     outputFile 'results.csv'
     userOutputFile 'users.csv'
     algorithm 'Baseline', 'baseline.groovy'
-    algorithm 'ItemItem', 'item-item.groovy'
     predict {
         outputFile 'predictions.csv'
         metric 'coverage'
@@ -62,10 +61,6 @@ task trainTest(type: TrainTest) {
         metric 'mrr'
         metric 'map'
         metric 'pr'
-    }
-
-    doFirst {
-        delete 'cache'
     }
 }
 

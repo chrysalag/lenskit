@@ -21,7 +21,6 @@
 
 import static com.xlson.groovycsv.CsvParser.parseCsv
 import org.lenskit.knn.item.model.SimilarityMatrixModel
-import org.lenskit.data.ratings.RatingSummary
 
 import java.util.zip.GZIPInputStream
 
@@ -41,7 +40,7 @@ File recommendFile = new File("recommendations.csv.gz")
 
 assertThat("output file exists",
            resultsFile, allOf(existingFile(),
-                              hasLineCount(equalTo(11))));
+                              hasLineCount(equalTo(6))));
 assertThat("output file exists",
            userFile, existingFile());
 assertThat("output file exists",
@@ -58,26 +57,5 @@ resultsFile.withReader { rdr ->
     }
 }
 
-assertThat(new File('build/crossfold.out/part01.train.pack'),
+assertThat(new File('build/crossfold.out/part01.train.csv.gz'),
            existingFile())
-
-// Verify that we have 5 distinct item-item models
-File cacheDir = new File("cache")
-def objects = new HashMap<String,Integer>()
-cacheDir.eachFile { file ->
-    if (!file.name.matches(/^\./)) {
-        def obj = file.withInputStream {
-            def stream = new GZIPInputStream(it)
-            stream.withObjectInputStream(getClass().classLoader) {
-                it.readObject()
-            }
-        }
-        def cls = obj.class.name
-        objects[cls] = objects.get(cls, 0) + 1
-    }
-}
-
-assertThat objects[SimilarityMatrixModel.name], equalTo(5)
-
-// Verify that we only have 5 rating summaries (objects cached)
-assertThat objects[RatingSummary.name], equalTo(5)
