@@ -22,13 +22,19 @@
 package org.grouplens.lenskit.hir;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.LongIterator;
+import it.unimi.dsi.fastutil.longs.LongIterators;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.grouplens.grapht.annotation.DefaultProvider;
+import org.grouplens.lenskit.vectors.MutableSparseVector;
 import org.lenskit.inject.Shareable;
 import org.grouplens.lenskit.vectors.ImmutableSparseVector;
 import org.grouplens.lenskit.vectors.SparseVector;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by chrysalag. Implements the Model of HIR algorithm.
@@ -36,6 +42,7 @@ import java.io.Serializable;
 
 @DefaultProvider(HIRModelBuilder.class)
 @Shareable
+@SuppressWarnings("deprecation")
 public class HIRModel implements Serializable {
 
     private static final long serialVersionUID  = 1L;
@@ -54,31 +61,32 @@ public class HIRModel implements Serializable {
         this.ymatrix = ymatrix;
     }
 
-    public int getCoratings(long item1, long item2) {
-        if (item1 == item2) {
-            return 0;
-        }
-        else if (item1 < item2) {
-            SparseVector row = cmatrix.get(item1);
-            if (row == null) {
-                return 0;
-            }
-            else {
-                double coratings = row.get(item2, 0);
-                return (int) coratings;
-            }
-        }
-        else {
-            SparseVector row = cmatrix.get(item2);
-            if (row == null) {
-                return 0;
-            }
-            else {
-                double coratings = row.get(item1, 0);
-                return (int) coratings;
-            }
-        }
+
+    public MutableSparseVector getCoratingsVector(long item) {
+
+        SparseVector row = cmatrix.get(item);
+        MutableSparseVector res = row.mutableCopy();
+        return res;
+
     }
 
+    public MutableSparseVector getProximityVector(long item, Collection<Long> items) {
 
+        double[] row = xmatrix.getRow((int) item);
+        Map<Long, Double> forRes = new HashMap<>();
+
+        LongIterator iter = LongIterators.asLongIterator(items.iterator());
+
+        double[] res = ymatrix.preMultiply(row);
+
+        int i = 0;
+        while (iter.hasNext()) {
+            final long meti = iter.nextLong();
+            forRes.put(meti, res[i]);
+            i++;
+        }
+
+        return MutableSparseVector.create(forRes);
+
+    }
 }

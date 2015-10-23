@@ -58,7 +58,8 @@ public class MapItemGenreDAOTest {
             str.println("7323,\"Good bye, Lenin! (2003)\",0|0|0|0|1|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
             str.println("48394,\"Pan's Labyrinth (Laberinto del fauno, El) (2006)\",0|0|0|0|0|0|0|1|1|0|0|0|0|0|0|1|0|0|0|0");
             str.println("64716,Seven Pounds (2008),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("104798,6954 Kilometriä Kotiin (2012),0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("117444,Song of the Sea (2014),0|0|1|1|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("140214,Triple Dog (2010),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|1|0|0|0|0");
         } finally {
             str.close();
         }
@@ -78,15 +79,15 @@ public class MapItemGenreDAOTest {
     @Test
     public void testGenreVector() {
         double[] testVec1 = {0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0};
-        double[] testVec2 = {0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0};
+        double[] testVec2 = {0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0};
         RealVector testRealVector1 = MatrixUtils.createRealVector(testVec1);
         RealVector testRealVector2 = MatrixUtils.createRealVector(testVec2);
         assertThat(gdao.getItemGenre(318), equalTo(testRealVector1));
-        assertThat(gdao.getItemGenre(104798), equalTo(testRealVector2));
+        assertThat(gdao.getItemGenre(117444), equalTo(testRealVector2));
     }
 
     @Test
     public void testItemIds() {
-        assertThat(gdao.getItemIds(), containsInAnyOrder(318L, 2329L, 5475L, 7323L, 48394L, 64716L, 104798L));
+        assertThat(gdao.getItemIds(), containsInAnyOrder(318L, 2329L, 5475L, 7323L, 48394L, 64716L, 117444L, 140214L));
     }
 }

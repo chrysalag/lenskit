@@ -36,6 +36,7 @@ import javax.inject.Provider;
 /**
  * Created by chrysalag. Provider of HIR Model.
  */
+@SuppressWarnings("deprecation")
 public class HIRModelBuilder implements Provider<HIRModel> {
 
     private final DirectAssociationMatrix DAMatrix;

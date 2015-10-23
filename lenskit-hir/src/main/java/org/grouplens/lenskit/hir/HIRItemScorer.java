@@ -60,21 +60,21 @@ public class HIRItemScorer extends AbstractItemScorer {
     protected final UserEventDAO dao;
     protected HIRModel model;
     protected final PreferenceDomain domain;
-    //protected double directAssociation;
-    //protected double proximity;
+    protected double directAssociation;
+    protected double proximity;
 
     @Inject
     public HIRItemScorer(UserEventDAO dao,
                          HIRModel model,
-                         @Nullable PreferenceDomain dom
-                         //,@DirectAssociationParameter double direct,
-                         //@ProximityParameter double prox
+                         @Nullable PreferenceDomain dom,
+                         @DirectAssociationParameter double direct,
+                         @ProximityParameter double prox
                          ) {
         this.dao = dao;
         this.model = model;
         domain = dom;
-        //directAssociation = direct;
-        //proximity = prox;
+        directAssociation = direct;
+        proximity = prox;
     }
 
     @Nonnull
@@ -85,39 +85,40 @@ public class HIRItemScorer extends AbstractItemScorer {
         if (history == null) {
             history = History.forUser(user);
         }
-        SparseVector preferenceVector = RatingVectorUserHistorySummarizer.makeRatingVector(history);
-
-        //double preferenceInResults = 1 - directAssociation - proximity;
-        //MutableSparseVector prefernceVec = preferenceVector.mutableCopy();
-        //prefernceVec.multiply(preferenceInResults);
+        SparseVector historyVector = RatingVectorUserHistorySummarizer.makeRatingVector(history);
 
         List<Result> results = new ArrayList<>();
-        LongIterator iter = LongIterators.asLongIterator(items.iterator());
-        while (iter.hasNext()) {
-            final long predicteeItem = iter.nextLong();
-            if (!preferenceVector.containsKey(predicteeItem)) {
-                double total = 0;
-                int nitems = 0;
-                for (VectorEntry e: preferenceVector) {
-                    long currentItem = e.getKey();
-                    double entryValuec = e.getValue();
 
-                    int nusers = model.getCoratings(predicteeItem, currentItem);
-                    if (nusers != 0) {
-                        //double currentDev = model.getDeviation(predicteeItem, currentItem);
-                        //total += currentDev + e.getValue();
-                        nitems++;
-                    }
-                }
-                if (nitems != 0) {
-                    double predValue = total / nitems;
-                    if (domain != null) {
-                        predValue = domain.clampValue(predValue);
-                    }
-                    results.add(Results.create(predicteeItem, predValue));
-                }
+        MutableSparseVector preferenceVector = MutableSparseVector.create(items, 0);
+        MutableSparseVector coratingsVector;
+        MutableSparseVector proximityVector;
+
+        for (VectorEntry e: historyVector.fast()) {
+            long key = e.getKey();
+            double value = e.getValue();
+            preferenceVector.set(key, value);
+        }
+
+        double preferenceInResults = 1 - directAssociation - proximity;
+        preferenceVector.multiply(preferenceInResults);
+
+        for (VectorEntry e: preferenceVector.fast()) {
+            if (e.getValue() != 0) {
+                double prefValue = e.getValue();
+                long prefKey = e.getKey();
+                coratingsVector = model.getCoratingsVector(prefKey);
+                coratingsVector.multiply(directAssociation);
+
+                proximityVector = model.getProximityVector(prefKey, items);
+                proximityVector.multiply(proximity);
+
+                coratingsVector.add(proximityVector);
+                coratingsVector.multiply(prefValue);
+
+                preferenceVector.add(coratingsVector);
             }
         }
+
         return Results.newResultMap(results);
     }
 

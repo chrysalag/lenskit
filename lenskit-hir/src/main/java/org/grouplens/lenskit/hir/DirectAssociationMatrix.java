@@ -35,6 +35,7 @@ import java.util.Map;
  * Created by chrysalag. Processes ratings data for HIR Item Scorer.
  */
 
+@SuppressWarnings("deprecation")
 public class DirectAssociationMatrix {
 
     private Long2ObjectMap<MutableSparseVector> workMatrix;
@@ -48,7 +49,7 @@ public class DirectAssociationMatrix {
     public DirectAssociationMatrix(ItemDAO dao) {
         LongSet items = dao.getItemIds();
 
-        workMatrix = new Long2ObjectOpenHashMap<MutableSparseVector>(items.size());
+        workMatrix = new Long2ObjectOpenHashMap<>(items.size());
 
         LongIterator iter = items.iterator();
         while (iter.hasNext()) {
