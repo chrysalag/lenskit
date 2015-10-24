@@ -23,6 +23,7 @@ package org.grouplens.lenskit.hir;
 
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
@@ -43,14 +44,26 @@ public class RowStochasticFactorOfProximity {
                                    ItemGenreDAO gDao) {
         LongSet items = dao.getItemIds();
         int genreSize = gDao.getGenreSize();
+        int itemsSize = items.size();
 
-        prepareGenresMatrix = MatrixUtils.createRealMatrix(items.size(), genreSize);
-        rowStochastic = MatrixUtils.createRealMatrix(items.size(), genreSize);
+        double[][] data = new double[itemsSize][genreSize];
 
+        //prepareGenresMatrix = MatrixUtils.createRealMatrix(itemsSize, genreSize);
+        prepareGenresMatrix = MatrixUtils.createRealMatrix(data);
+        //rowStochastic = MatrixUtils.createRealMatrix(itemsSize, genreSize);
+        rowStochastic = MatrixUtils.createRealMatrix(data);
+
+        int i = 0;
         LongIterator iter = items.iterator();
         while (iter.hasNext()) {
             long item = iter.nextLong();
-            prepareGenresMatrix.setRowVector((int) item, gDao.getItemGenre(item));
+            //    double[][] rowData = new double[1][genreSize];
+            //    rowData[0] = gDao.getItemGenre(item).toArray();
+            //    if (rowData[0] != null) {
+            //        prepareGenresMatrix.setRow(i, rowData[0]);
+            //    }
+                prepareGenresMatrix.setRowVector(i, gDao.getItemGenre(item));
+                i++;
         }
     }
 
@@ -67,7 +80,9 @@ public class RowStochasticFactorOfProximity {
 
             RealVector stochasticRow = forIter.mapDivide(sum);
 
-            rowStochastic.setRowVector(i, stochasticRow);
+            double[] row = stochasticRow.toArray();
+
+            rowStochastic.setRow(i, row);
         }
 
         return rowStochastic;

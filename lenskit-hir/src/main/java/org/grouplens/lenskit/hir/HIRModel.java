@@ -25,11 +25,11 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongIterators;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
 import org.grouplens.grapht.annotation.DefaultProvider;
 import org.grouplens.lenskit.vectors.MutableSparseVector;
 import org.lenskit.inject.Shareable;
 import org.grouplens.lenskit.vectors.ImmutableSparseVector;
-import org.grouplens.lenskit.vectors.SparseVector;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -64,25 +64,25 @@ public class HIRModel implements Serializable {
 
     public MutableSparseVector getCoratingsVector(long item) {
 
-        SparseVector row = cmatrix.get(item);
-        MutableSparseVector res = row.mutableCopy();
-        return res;
-
+        ImmutableSparseVector row = cmatrix.get(item);
+        return row.mutableCopy();
     }
 
     public MutableSparseVector getProximityVector(long item, Collection<Long> items) {
 
-        double[] row = xmatrix.getRow((int) item);
+        //double[] row = xmatrix.getRow((int) item);
+        RealVector row = xmatrix.getRowVector((int) item);
         Map<Long, Double> forRes = new HashMap<>();
 
         LongIterator iter = LongIterators.asLongIterator(items.iterator());
 
-        double[] res = ymatrix.preMultiply(row);
+        //double[] res = ymatrix.preMultiply(row);
+        RealVector res = ymatrix.preMultiply(row);
 
         int i = 0;
         while (iter.hasNext()) {
             final long meti = iter.nextLong();
-            forRes.put(meti, res[i]);
+            forRes.put(meti, res.getEntry(i));
             i++;
         }
 

@@ -84,6 +84,9 @@ public class MapItemGenreDAOTest {
         RealVector testRealVector2 = MatrixUtils.createRealVector(testVec2);
         assertThat(gdao.getItemGenre(318), equalTo(testRealVector1));
         assertThat(gdao.getItemGenre(117444), equalTo(testRealVector2));
+        assertThat(testRealVector1.getDimension(), equalTo(gdao.getGenreSize()));
+        assertThat(gdao.getItemGenre(318).getDimension(), equalTo(gdao.getGenreSize()));
+        assertThat(testVec1.length, equalTo(gdao.getGenreSize()));
     }
 
     @Test

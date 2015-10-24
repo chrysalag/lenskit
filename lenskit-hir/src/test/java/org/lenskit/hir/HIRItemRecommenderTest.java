@@ -1,4 +1,4 @@
- /*
+/*
  * LensKit, an open source recommender systems toolkit.
  * Copyright 2010-2014 LensKit Contributors.  See CONTRIBUTORS.md.
  * Work on LensKit has been funded by the National Science Foundation under
@@ -21,24 +21,29 @@
 
 package org.lenskit.hir;
 
-import org.grouplens.grapht.Component;
-import org.grouplens.grapht.Dependency;
-import org.grouplens.grapht.graph.DAGNode;
 import org.grouplens.lenskit.hir.HIRItemScorer;
+import org.grouplens.lenskit.hir.HIRModel;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.lenskit.LenskitConfiguration;
+import org.lenskit.LenskitRecommender;
 import org.lenskit.LenskitRecommenderEngine;
 import org.lenskit.api.ItemScorer;
+import org.lenskit.api.RatingPredictor;
+import org.lenskit.api.Recommender;
 import org.lenskit.api.RecommenderBuildException;
+import org.lenskit.baseline.BaselineScorer;
+import org.lenskit.baseline.ItemMeanRatingItemScorer;
+import org.lenskit.baseline.UserMeanBaseline;
+import org.lenskit.baseline.UserMeanItemScorer;
+import org.lenskit.basic.SimpleRatingPredictor;
+import org.lenskit.basic.TopNItemRecommender;
 import org.lenskit.data.dao.EventCollectionDAO;
 import org.lenskit.data.dao.EventDAO;
-import org.lenskit.data.dao.ItemGenreDAO;
 import org.lenskit.data.dao.MapItemGenreDAO;
 import org.lenskit.data.ratings.PreferenceDomain;
-import org.lenskit.data.ratings.PreferenceDomainBuilder;
 import org.lenskit.data.ratings.Rating;
 
 import java.io.File;
@@ -47,17 +52,16 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 
 /**
  * Created by chrysalag.
  */
-
-public class HIRItemScorerTest {
-
-    private static final double EPSILON = 1.0e-6;
+public class HIRItemRecommenderTest {
+    private LenskitRecommenderEngine engine;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -82,48 +86,57 @@ public class HIRItemScorerTest {
         gdao = MapItemGenreDAO.fromCSVFile(f);
     }
 
-    @Test
-    public void testPredict1() throws RecommenderBuildException {
-
+    @SuppressWarnings("deprecation")
+    @Before
+    public void setup() throws RecommenderBuildException {
         List<Rating> rs = new ArrayList<Rating>();
-        rs.add(Rating.create(1, 318, 4));
-        rs.add(Rating.create(2, 318, 2));
-        rs.add(Rating.create(1, 2329, 3));
-        rs.add(Rating.create(2, 2329, 2));
-        rs.add(Rating.create(3, 2329, 5));
-        rs.add(Rating.create(4, 2329, 2));
-        rs.add(Rating.create(1, 5475, 3));
-        rs.add(Rating.create(2, 5475, 4));
-        rs.add(Rating.create(3, 5475, 3));
-        rs.add(Rating.create(4, 5475, 2));
-        rs.add(Rating.create(5, 5475, 3));
-        rs.add(Rating.create(6, 5475, 2));
-        rs.add(Rating.create(1, 7323, 3));
-        rs.add(Rating.create(3, 7323, 4));
+        rs.add(Rating.create(1, 318, 2));
+        rs.add(Rating.create(1, 5475, 4));
+        rs.add(Rating.create(8, 7323, 5));
+        rs.add(Rating.create(8, 318, 4));
+
+        EventDAO dao = new EventCollectionDAO(rs);
 
         LenskitConfiguration config = new LenskitConfiguration();
+        config.bind(EventDAO.class).to(dao);
         config.bind(MapItemGenreDAO.class).to(gdao);
-        config.bind(EventDAO.class).to(EventCollectionDAO.create(rs));
         config.bind(ItemScorer.class).to(HIRItemScorer.class);
-        config.bind(PreferenceDomain.class).to(new PreferenceDomainBuilder(0, 5)
-                                                       .setPrecision(Double.NaN)
-                                                       .build());
-        ItemScorer predictor = LenskitRecommenderEngine.build(config)
-                                                       .createRecommender()
-                                                       .getItemScorer();
+        config.bind(PreferenceDomain.class).to(new PreferenceDomain(0, 5));
+        // factory.setComponent(UserVectorNormalizer.class, IdentityVectorNormalizer.class);
+        config.bind(BaselineScorer.class, ItemScorer.class)
+              .to(UserMeanItemScorer.class);
+        config.bind(UserMeanBaseline.class, ItemScorer.class)
+              .to(ItemMeanRatingItemScorer.class);
+        engine = LenskitRecommenderEngine.build(config);
+    }
 
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testHIRRecommenderEngineCreate() {
+        try (Recommender rec = engine.createRecommender()) {
 
-        assertThat(predictor, notNullValue());
-   /*     assertEquals(7 / 3.0, predictor.score(2, 9).getScore(), EPSILON);
-        assertEquals(13 / 3.0, predictor.score(3, 6).getScore(), EPSILON);
-        assertEquals(2, predictor.score(4, 6).getScore(), EPSILON);
-        assertEquals(2, predictor.score(4, 9).getScore(), EPSILON);
-        assertEquals(2.5, predictor.score(5, 6).getScore(), EPSILON);
-        assertEquals(3, predictor.score(5, 7).getScore(), EPSILON);
-        assertEquals(3.5, predictor.score(5, 9).getScore(), EPSILON);
-        assertEquals(1.5, predictor.score(6, 6).getScore(), EPSILON);
-        assertEquals(2, predictor.score(6, 7).getScore(), EPSILON);
-        assertEquals(2.5, predictor.score(6, 9).getScore(), EPSILON);
-*/
+            assertThat(rec.getItemScorer(),
+                       instanceOf(HIRItemScorer.class));
+            RatingPredictor rp = rec.getRatingPredictor();
+            assertThat(rp, notNullValue());
+            assertThat(rp, instanceOf(SimpleRatingPredictor.class));
+            assertThat(((SimpleRatingPredictor) rp).getItemScorer(),
+                       sameInstance(rec.getItemScorer()));
+            assertThat(rec.getItemRecommender(),
+                       instanceOf(TopNItemRecommender.class));
+        }
+    }
+
+    @Test
+    public void testConfigSeparation() {
+        try (LenskitRecommender rec1 = engine.createRecommender();
+             LenskitRecommender rec2 = engine.createRecommender()) {
+
+            assertThat(rec1.getItemScorer(),
+                       not(sameInstance(rec2.getItemScorer())));
+            assertThat(rec1.get(HIRModel.class),
+                       allOf(not(nullValue()),
+                             sameInstance(rec2.get(HIRModel.class))));
+        }
     }
 }

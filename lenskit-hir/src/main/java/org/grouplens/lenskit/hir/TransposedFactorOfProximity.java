@@ -43,14 +43,22 @@ public class TransposedFactorOfProximity {
                                    ItemGenreDAO gDao) {
         LongSet items = dao.getItemIds();
         int genreSize = gDao.getGenreSize();
+        int itemsSize = items.size();
 
-        prepareGenresMatrix = MatrixUtils.createRealMatrix(items.size(), genreSize);
-        transposed = MatrixUtils.createRealMatrix(genreSize, items.size());
+        double[][] dataPGM = new double[itemsSize][genreSize];
+        double[][] dataTransposed = new double[genreSize][itemsSize];
 
+        //prepareGenresMatrix = MatrixUtils.createRealMatrix(items.size(), genreSize);
+        prepareGenresMatrix = MatrixUtils.createRealMatrix(dataPGM);
+        transposed = MatrixUtils.createRealMatrix(dataTransposed);
+
+        int i = 0;
         LongIterator iter = items.iterator();
         while (iter.hasNext()) {
             long item = iter.nextLong();
-            prepareGenresMatrix.setRowVector((int) item, gDao.getItemGenre(item));
+            prepareGenresMatrix.setRow(i, gDao.getItemGenre(item).toArray());
+            //prepareGenresMatrix.setRowVector((int) item, gDao.getItemGenre(item));
+            i++;
         }
     }
 

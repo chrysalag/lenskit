@@ -77,6 +77,10 @@ public class DirectAssociationMatrix {
                 coratings++;
             }
             workMatrix.get(id1).set(id2, coratings);
+            workMatrix.get(id2).set(id1, coratings);
+        } else if (id1 == id2) {
+            workMatrix.get(id1).set(id2, 0);
+            workMatrix.get(id2).set(id1, 0);
         }
     }
 

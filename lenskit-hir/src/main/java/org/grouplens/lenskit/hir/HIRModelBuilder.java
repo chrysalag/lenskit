@@ -50,8 +50,6 @@ public class HIRModelBuilder implements Provider<HIRModel> {
     @Inject
     public HIRModelBuilder(@Transient @Nonnull ItemDAO dao,
                            @Transient @Nonnull ItemGenreDAO gDao,
-                           @DirectAssociationParameter double direct,
-                           @ProximityParameter double prox,
                            @Transient ItemItemBuildContext context) {
 
         buildContext = context;
@@ -70,10 +68,10 @@ public class HIRModelBuilder implements Provider<HIRModel> {
             LongIterator inner = items.iterator();
             while (inner.hasNext()) {
                 final long item2 = inner.nextLong();
-                if (item1 != item2) {
+                //if (item1 != item2) {
                     SparseVector vec2 = buildContext.itemVector(item2);
                     DAMatrix.putItemPair(item1, vec1, item2, vec2);
-                }
+                //}
             }
         }
 
