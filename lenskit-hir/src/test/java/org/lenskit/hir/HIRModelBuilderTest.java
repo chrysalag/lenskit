@@ -39,6 +39,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -120,6 +122,11 @@ public class HIRModelBuilderTest {
     @Test
     public void testBuild2() {
 
+        Collection<Long> items = new HashSet<>();
+        items.add((long)318);
+        items.add((long)48394);
+        items.add((long)117444);
+
         List<Rating> rs = new ArrayList<Rating>();
         rs.add(Rating.create(1, 318, 4));
         rs.add(Rating.create(2, 318, 5));
@@ -137,6 +144,10 @@ public class HIRModelBuilderTest {
         MutableSparseVector msv48394 = MutableSparseVector.create(318, 48394, 117444);
         MutableSparseVector msv117444 = MutableSparseVector.create(318, 48394, 117444);
 
+        MutableSparseVector pv1 = MutableSparseVector.create(318, 48394, 117444);
+        MutableSparseVector pv2 = MutableSparseVector.create(318, 48394, 117444);
+        MutableSparseVector pv3 = MutableSparseVector.create(318, 48394, 117444);
+
         msv318.set(318, 0);
         msv318.set(48394, 0.5);
         msv318.set(117444, 0.5);
@@ -149,9 +160,24 @@ public class HIRModelBuilderTest {
         msv117444.set(48394, 0.5);
         msv117444.set(117444, 0);
 
+        pv1.set(318, 2/3);
+        pv1.set(48394, 1/6);
+        pv1.set(117444, 1/6);
+
+        pv2.set(318, 1/6);
+        pv2.set(48394, 2/3);
+        pv2.set(117444, 1/6);
+
+        pv3.set(318, 1/6);
+        pv3.set(48394, 0);
+        pv3.set(117444, 0);
+
         assertEquals(msv318, model2.getCoratingsVector(318));
         assertEquals(msv48394, model2.getCoratingsVector(48394));
         assertEquals(msv117444, model2.getCoratingsVector(117444));
+        assertEquals(pv1, model2.getProximityVector(318, items));
+        assertEquals(pv2, model2.getProximityVector(48394, items));
+        assertEquals(pv3, model2.getProximityVector(117444, items));
     }
 
     /*
