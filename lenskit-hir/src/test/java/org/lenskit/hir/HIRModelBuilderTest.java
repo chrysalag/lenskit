@@ -63,9 +63,14 @@ public class HIRModelBuilderTest {
         File f = folder.newFile("genres.csv");
         PrintStream str = new PrintStream(f);
         try {
-            str.println("318,\"Shawshank Redemption, The (1994)\",1|0|1|0");
-            str.println("48394,\"Pan's Labyrinth (Laberinto del fauno, El) (2006)\",1|1|0|0");
-            str.println("117444,Song of the Sea (2014),1|0|0|0");
+            str.println("318,\"Shawshank Redemption, The (1994)\",0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("2329,American History X (1998),0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("5475,Z (1969),0|0|0|0|0|0|0|1|0|0|0|0|1|0|0|1|0|0|0|0");
+            str.println("7323,\"Good bye, Lenin! (2003)\",0|0|0|0|1|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("48394,\"Pan's Labyrinth (Laberinto del fauno, El) (2006)\",0|0|0|0|0|0|0|1|1|0|0|0|0|0|0|1|0|0|0|0");
+            str.println("64716,Seven Pounds (2008),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("117444,Song of the Sea (2014),0|0|1|1|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("140214,Triple Dog (2010),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|1|0|0|0|0");
         } finally {
             str.close();
         }
@@ -124,8 +129,13 @@ public class HIRModelBuilderTest {
 
         Collection<Long> items = new HashSet<>();
         items.add((long)318);
+        items.add((long)2329);
+        items.add((long)5475);
+        items.add((long)7323);
         items.add((long)48394);
+        items.add((long)64716);
         items.add((long)117444);
+        items.add((long)140214);
 
         List<Rating> rs = new ArrayList<Rating>();
         rs.add(Rating.create(1, 318, 4));
@@ -140,44 +150,202 @@ public class HIRModelBuilderTest {
 
         HIRModel model2 = getModel(rs);
 
-        MutableSparseVector msv318 = MutableSparseVector.create(318, 48394, 117444);
-        MutableSparseVector msv48394 = MutableSparseVector.create(318, 48394, 117444);
-        MutableSparseVector msv117444 = MutableSparseVector.create(318, 48394, 117444);
+        MutableSparseVector msv1 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector msv2 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector msv3 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector msv4 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector msv5 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector msv6 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector msv7 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector msv8 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
 
-        MutableSparseVector pv1 = MutableSparseVector.create(318, 48394, 117444);
-        MutableSparseVector pv2 = MutableSparseVector.create(318, 48394, 117444);
-        MutableSparseVector pv3 = MutableSparseVector.create(318, 48394, 117444);
 
-        msv318.set(318, 0);
-        msv318.set(48394, 0.5);
-        msv318.set(117444, 0.5);
+        MutableSparseVector pv1 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector pv2 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector pv3 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector pv4 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector pv5 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector pv6 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector pv7 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector pv8 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
 
-        msv48394.set(318, 0.5);
-        msv48394.set(48394, 0);
-        msv48394.set(117444, 0.5);
+        // 318
+        msv1.set(318, 0);
+        msv1.set(2329, 0);
+        msv1.set(5475, 0);
+        msv1.set(7323, 0);
+        msv1.set(48394, 1/8);
+        msv1.set(64716, 0);
+        msv1.set(117444, 1/8);
+        msv1.set(140214, 0);
 
-        msv117444.set(318, 0.5);
-        msv117444.set(48394, 0.5);
-        msv117444.set(117444, 0);
+        // 2329
+        msv2.set(318, 0);
+        msv2.set(2329, 0);
+        msv2.set(5475, 0);
+        msv2.set(7323, 0);
+        msv2.set(48394, 0);
+        msv2.set(64716, 0);
+        msv2.set(117444, 0);
+        msv2.set(140214, 0);
 
-        pv1.set(318, 2/3);
-        pv1.set(48394, 1/6);
-        pv1.set(117444, 1/6);
+        // 5475
+        msv3.set(318, 0);
+        msv3.set(2329, 0);
+        msv3.set(5475, 0);
+        msv3.set(7323, 0);
+        msv3.set(48394, 0);
+        msv3.set(64716, 0);
+        msv3.set(117444, 0);
+        msv3.set(140214, 0);
 
-        pv2.set(318, 1/6);
-        pv2.set(48394, 2/3);
-        pv2.set(117444, 1/6);
+        // 7323
+        msv4.set(318, 0);
+        msv4.set(2329, 0);
+        msv4.set(5475, 0);
+        msv4.set(7323, 0);
+        msv4.set(48394, 0);
+        msv4.set(64716, 0);
+        msv4.set(117444, 0);
+        msv4.set(140214, 0);
 
-        pv3.set(318, 1/6);
-        pv3.set(48394, 0);
+        // 48394
+        msv5.set(318, 1/8);
+        msv5.set(2329, 0);
+        msv5.set(5475, 0);
+        msv5.set(7323, 0);
+        msv5.set(48394, 0);
+        msv5.set(64716, 0);
+        msv5.set(117444, 1/8);
+        msv5.set(140214, 0);
+
+        // 64716
+        msv6.set(318, 0);
+        msv6.set(2329, 0);
+        msv6.set(5475, 0);
+        msv6.set(7323, 0);
+        msv6.set(48394, 0);
+        msv6.set(64716, 0);
+        msv6.set(117444, 0);
+        msv6.set(140214, 0);
+
+        // 117444
+        msv7.set(318, 1/8);
+        msv7.set(2329, 0);
+        msv7.set(5475, 0);
+        msv7.set(7323, 0);
+        msv7.set(48394, 1/8);
+        msv7.set(64716, 0);
+        msv7.set(117444, 0);
+        msv7.set(140214, 0);
+
+        // 140214
+        msv8.set(318, 0);
+        msv8.set(2329, 0);
+        msv8.set(5475, 0);
+        msv8.set(7323, 0);
+        msv8.set(48394, 0);
+        msv8.set(64716, 0);
+        msv8.set(117444, 0);
+        msv8.set(140214, 0);
+
+        // 318
+        pv1.set(318, 0.32143);
+        pv1.set(2329, 0.32143);
+        pv1.set(5475, 0.07143);
+        pv1.set(7323, 0.07143);
+        pv1.set(48394, 0.07143);
+        pv1.set(64716, 0.07143);
+        pv1.set(117444, 0);
+        pv1.set(140214, 0.07143);
+
+        // 2329
+        pv2.set(318, 0.32143);
+        pv2.set(2329, 0.32143);
+        pv2.set(5475, 0.07143);
+        pv2.set(7323, 0.07143);
+        pv2.set(48394, 0.07143);
+        pv2.set(64716, 0.07143);
+        pv2.set(117444, 0);
+        pv2.set(140214, 0.07143);
+
+        // 5475
+        pv3.set(318, 0.04762);
+        pv3.set(2329, 0.04762);
+        pv3.set(5475, 0.49206);
+        pv3.set(7323, 0.04762);
+        pv3.set(48394, 0.15873);
+        pv3.set(64716,  0.04762);
         pv3.set(117444, 0);
+        pv3.set(140214, 0.15873);
 
-        assertEquals(msv318, model2.getCoratingsVector(318));
-        assertEquals(msv48394, model2.getCoratingsVector(48394));
-        assertEquals(msv117444, model2.getCoratingsVector(117444));
+        // 7323
+        pv4.set(318, 0.07143);
+        pv4.set(2329, 0.07143);
+        pv4.set(5475, 0.07143);
+        pv4.set(7323, 0.57143);
+        pv4.set(48394, 0.07143);
+        pv4.set(64716, 0.07143);
+        pv4.set(117444, 0);
+        pv4.set(140214, 0.07143);
+
+        // 48394
+        pv5.set(318, 0.04762);
+        pv5.set(2329, 0.04762);
+        pv5.set(5475, 0.15873);
+        pv5.set(7323, 0.04762);
+        pv5.set(48394, 0.32540);
+        pv5.set(64716, 0.04762);
+        pv5.set(117444, 0.16667);
+        pv5.set(140214, 0.15873);
+
+        // 64716
+        pv6.set(318, 0.14286);
+        pv6.set(2329, 0.14286);
+        pv6.set(5475, 0.14286);
+        pv6.set(7323, 0.14286);
+        pv6.set(48394, 0.14286);
+        pv6.set(64716, 0.14286);
+        pv6.set(117444, 0);
+        pv6.set(140214, 0.14286);
+
+        // 117444
+        pv7.set(318, 0);
+        pv7.set(2329, 0);
+        pv7.set(5475, 0);
+        pv7.set(7323, 0);
+        pv7.set(48394, 0.16667);
+        pv7.set(64716, 0);
+        pv7.set(117444, 0.83333);
+        pv7.set(140214, 0);
+
+        // 140214
+        pv8.set(318, 0.07143);
+        pv8.set(2329, 0.07143);
+        pv8.set(5475, 0.23810);
+        pv8.set(7323, 0.07143);
+        pv8.set(48394, 0.23810);
+        pv8.set(64716, 0.07143);
+        pv8.set(117444, 0);
+        pv8.set(140214, 0.23810);
+
+        assertEquals(msv1, model2.getCoratingsVector(318));
+        assertEquals(msv2, model2.getCoratingsVector(2329));
+        assertEquals(msv3, model2.getCoratingsVector(5475));
+        assertEquals(msv4, model2.getCoratingsVector(7323));
+        assertEquals(msv5, model2.getCoratingsVector(48394));
+        assertEquals(msv6, model2.getCoratingsVector(64716));
+        assertEquals(msv7, model2.getCoratingsVector(117444));
+        assertEquals(msv8, model2.getCoratingsVector(140214));
+
         assertEquals(pv1, model2.getProximityVector(318, items));
-        assertEquals(pv2, model2.getProximityVector(48394, items));
-        assertEquals(pv3, model2.getProximityVector(117444, items));
+        assertEquals(pv2, model2.getProximityVector(2329, items));
+        assertEquals(pv3, model2.getProximityVector(5475, items));
+        assertEquals(pv4, model2.getProximityVector(7323, items));
+        assertEquals(pv5, model2.getProximityVector(48394, items));
+        assertEquals(pv6, model2.getProximityVector(64716, items));
+        assertEquals(pv7, model2.getProximityVector(117444, items));
+        assertEquals(pv8, model2.getProximityVector(140214, items));
     }
 
     /*

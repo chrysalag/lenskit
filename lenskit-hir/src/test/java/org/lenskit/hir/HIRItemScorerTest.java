@@ -68,14 +68,9 @@ public class HIRItemScorerTest {
         File f = folder.newFile("genres.csv");
         PrintStream str = new PrintStream(f);
         try {
-            str.println("318,\"Shawshank Redemption, The (1994)\",0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("2329,American History X (1998),0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("5475,Z (1969),0|0|0|0|0|0|0|1|0|0|0|0|1|0|0|1|0|0|0|0");
-            str.println("7323,\"Good bye, Lenin! (2003)\",0|0|0|0|1|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("48394,\"Pan's Labyrinth (Laberinto del fauno, El) (2006)\",0|0|0|0|0|0|0|1|1|0|0|0|0|0|0|1|0|0|0|0");
-            str.println("64716,Seven Pounds (2008),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("117444,Song of the Sea (2014),0|0|1|1|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("140214,Triple Dog (2010),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|1|0|0|0|0");
+            str.println("318,\"Shawshank Redemption, The (1994)\",1|0|1|0");
+            str.println("48394,\"Pan's Labyrinth (Laberinto del fauno, El) (2006)\",1|1|0|0");
+            str.println("117444,Song of the Sea (2014),1|0|0|0");
         } finally {
             str.close();
         }
@@ -86,27 +81,19 @@ public class HIRItemScorerTest {
     public void testPredict1() throws RecommenderBuildException {
 
         List<Rating> rs = new ArrayList<Rating>();
-        rs.add(Rating.create(1, 318, 4));
-        rs.add(Rating.create(2, 318, 2));
-        rs.add(Rating.create(1, 2329, 3));
-        rs.add(Rating.create(2, 2329, 2));
-        rs.add(Rating.create(3, 2329, 5));
-        rs.add(Rating.create(4, 2329, 2));
-        rs.add(Rating.create(1, 5475, 3));
-        rs.add(Rating.create(2, 5475, 4));
-        rs.add(Rating.create(3, 5475, 3));
-        rs.add(Rating.create(4, 5475, 2));
-        rs.add(Rating.create(5, 5475, 3));
-        rs.add(Rating.create(6, 5475, 2));
-        rs.add(Rating.create(1, 7323, 3));
-        rs.add(Rating.create(3, 7323, 4));
+        rs.add(Rating.create(1, 318, 5));
+        rs.add(Rating.create(2, 318, 4));
+        rs.add(Rating.create(3, 48394, 5));
+        rs.add(Rating.create(4, 48394, 1));
+        rs.add(Rating.create(1, 117444, 5));
+        rs.add(Rating.create(2, 117444, 4));
 
         LenskitConfiguration config = new LenskitConfiguration();
         config.bind(MapItemGenreDAO.class).to(gdao);
         config.bind(EventDAO.class).to(EventCollectionDAO.create(rs));
         config.bind(ItemScorer.class).to(HIRItemScorer.class);
-        config.bind(PreferenceDomain.class).to(new PreferenceDomainBuilder(0, 5)
-                                                       .setPrecision(Double.NaN)
+        config.bind(PreferenceDomain.class).to(new PreferenceDomainBuilder(1, 5)
+                                                       .setPrecision(1)
                                                        .build());
         ItemScorer predictor = LenskitRecommenderEngine.build(config)
                                                        .createRecommender()
@@ -114,7 +101,7 @@ public class HIRItemScorerTest {
 
 
         assertThat(predictor, notNullValue());
-   /*     assertEquals(7 / 3.0, predictor.score(2, 9).getScore(), EPSILON);
+    /*  assertEquals(7 / 3.0, predictor.score(2, 9).getScore(), EPSILON);
         assertEquals(13 / 3.0, predictor.score(3, 6).getScore(), EPSILON);
         assertEquals(2, predictor.score(4, 6).getScore(), EPSILON);
         assertEquals(2, predictor.score(4, 9).getScore(), EPSILON);
@@ -124,6 +111,6 @@ public class HIRItemScorerTest {
         assertEquals(1.5, predictor.score(6, 6).getScore(), EPSILON);
         assertEquals(2, predictor.score(6, 7).getScore(), EPSILON);
         assertEquals(2.5, predictor.score(6, 9).getScore(), EPSILON);
-*/
+    */
     }
 }
