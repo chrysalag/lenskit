@@ -21,6 +21,7 @@
 
 package org.lenskit.hir;
 
+import groovy.json.internal.MapItemValue;
 import org.grouplens.lenskit.data.history.RatingVectorUserHistorySummarizer;
 import org.grouplens.lenskit.data.history.UserHistorySummarizer;
 import org.grouplens.lenskit.hir.HIRModel;
@@ -33,6 +34,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.lenskit.data.dao.*;
 import org.lenskit.data.ratings.Rating;
+import org.lenskit.knn.item.model.ItemItemBuildContext;
 import org.lenskit.knn.item.model.ItemItemBuildContextProvider;
 
 import java.io.File;
@@ -57,6 +59,8 @@ public class HIRModelBuilderTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
     MapItemGenreDAO gdao;
+    Collection<Long> items;
+
 
     @Before
     public void createFile() throws IOException {
@@ -75,7 +79,24 @@ public class HIRModelBuilderTest {
             str.close();
         }
         gdao = MapItemGenreDAO.fromCSVFile(f);
+        items = MapItemGenreDAO.fromCSVFile(f).getItemIds();
     }
+
+/*    @Before
+    public void takeItemData(){
+        Collection<Long> items = new HashSet<>();
+        items.add((long)318);
+        items.add((long)2329);
+        items.add((long)5475);
+        items.add((long)7323);
+        items.add((long)48394);
+        items.add((long)64716);
+        items.add((long)117444);
+        items.add((long)140214);
+
+
+
+    }*/
 
     private HIRModel getModel(List<Rating> ratings) {
         EventDAO dao = EventCollectionDAO.create(ratings);
@@ -98,7 +119,6 @@ public class HIRModelBuilderTest {
             rs.add(Rating.create(4, 48394, 1));
             rs.add(Rating.create(1, 117444, 5));
             rs.add(Rating.create(2, 117444, 4));
-
 
             HIRModel model1 = getModel(rs);
 
@@ -123,19 +143,9 @@ public class HIRModelBuilderTest {
             assertEquals(msv117444, model1.getCoratingsVector(117444));
     }
 
-
+/*
     @Test
     public void testBuild2() {
-
-        Collection<Long> items = new HashSet<>();
-        items.add((long)318);
-        items.add((long)2329);
-        items.add((long)5475);
-        items.add((long)7323);
-        items.add((long)48394);
-        items.add((long)64716);
-        items.add((long)117444);
-        items.add((long)140214);
 
         List<Rating> rs = new ArrayList<Rating>();
         rs.add(Rating.create(1, 318, 4));
@@ -346,7 +356,7 @@ public class HIRModelBuilderTest {
         assertEquals(pv6, model2.getProximityVector(64716, items));
         assertEquals(pv7, model2.getProximityVector(117444, items));
         assertEquals(pv8, model2.getProximityVector(140214, items));
-    }
+    }*/
 
     /*
     @Test

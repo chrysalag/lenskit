@@ -71,16 +71,16 @@ public class DirectAssociationMatrix {
             throw new IllegalStateException("Model is already built");
         }
         // to profit from matrix symmetry, always store by the lesser id
-        if (id1 < id2) {
+        if (id1 == id2) {
+            workMatrix.get(id1).set(id2, 0);
+            workMatrix.get(id2).set(id1, 0);
+        } else {
             int coratings = 0;
             for (Pair<VectorEntry,VectorEntry> pair: Vectors.fastIntersect(itemVec1, itemVec2)) {
                 coratings++;
             }
             workMatrix.get(id1).set(id2, coratings);
             workMatrix.get(id2).set(id1, coratings);
-        } else if (id1 == id2) {
-            workMatrix.get(id1).set(id2, 0);
-            workMatrix.get(id2).set(id1, 0);
         }
     }
 

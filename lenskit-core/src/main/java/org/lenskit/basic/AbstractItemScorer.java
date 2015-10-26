@@ -58,4 +58,5 @@ public abstract class AbstractItemScorer implements ItemScorer {
         ResultMap results = scoreWithDetails(user, items);
         return results.scoreMap();
     }
+
 }

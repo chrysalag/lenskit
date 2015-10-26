@@ -33,6 +33,7 @@ import org.grouplens.lenskit.vectors.MutableSparseVector;
 import org.lenskit.api.Result;
 import org.lenskit.api.ResultMap;
 import org.lenskit.basic.AbstractItemScorer;
+import org.lenskit.data.dao.ItemDAO;
 import org.lenskit.data.dao.UserEventDAO;
 import org.lenskit.data.ratings.Rating;
 import org.lenskit.data.history.History;
@@ -42,14 +43,13 @@ import org.lenskit.data.ratings.PreferenceDomain;
 import org.grouplens.lenskit.vectors.SparseVector;
 import org.grouplens.lenskit.vectors.VectorEntry;
 import org.lenskit.api.ItemScorer;
+import org.lenskit.inject.Transient;
 import org.lenskit.results.Results;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * An {@link ItemScorer} that implements the HIR algorithm.
@@ -58,6 +58,7 @@ import java.util.List;
 public class HIRItemScorer extends AbstractItemScorer {
 
     protected final UserEventDAO dao;
+    protected final ItemDAO idao;
     protected HIRModel model;
     protected final PreferenceDomain domain;
     protected double directAssociation;
@@ -66,12 +67,14 @@ public class HIRItemScorer extends AbstractItemScorer {
     @Inject
     public HIRItemScorer(UserEventDAO dao,
                          HIRModel model,
+                         ItemDAO idao,
                          @Nullable PreferenceDomain dom,
                          @DirectAssociationParameter double direct,
                          @ProximityParameter double prox
                          ) {
         this.dao = dao;
         this.model = model;
+        this.idao = idao;
         domain = dom;
         directAssociation = direct;
         proximity = prox;
@@ -80,6 +83,9 @@ public class HIRItemScorer extends AbstractItemScorer {
     @Nonnull
     @Override
     public ResultMap scoreWithDetails(long user, @Nonnull Collection<Long> items) {
+        assert items.size() > 0;
+
+        Set<Long> item = idao.getItemIds();
 
         UserHistory<Rating> history = dao.getEventsForUser(user, Rating.class);
         if (history == null) {
@@ -89,14 +95,35 @@ public class HIRItemScorer extends AbstractItemScorer {
 
         List<Result> results = new ArrayList<>();
 
-        MutableSparseVector preferenceVector = MutableSparseVector.create(items, 0);
+        Set<Long> keys = new TreeSet<>(item);
+
+        MutableSparseVector preferenceVector = MutableSparseVector.create(keys);
         MutableSparseVector coratingsVector;
         MutableSparseVector proximityVector;
+
+
+        preferenceVector.fill(0);
+        // the vector is empty
+        assert !preferenceVector.isEmpty();
+
+        assert preferenceVector.size() != 0;
+        // but has the keys (more on this later)
+        assert preferenceVector.keyDomain().equals(keys);
+
+//        assert preferenceVector.size() == keys.size();
+
+        // the vector is empty
+//        assert preferenceVector.size() == 0;
+        // but has the keys (more on this later)
+         assert preferenceVector.keyDomain().equals(keys);
+      //  assert preferenceVector.keySet() == preferenceVector.keyDomain();
+        //assert preferenceVector.keySet() == keys;
 
         for (VectorEntry e: historyVector.fast()) {
             long key = e.getKey();
             double value = e.getValue();
             preferenceVector.set(key, value);
+
         }
 
         double preferenceInResults = 1 - directAssociation - proximity;
