@@ -74,10 +74,9 @@ public class HIRModelBuilderTest {
             str.println("0,\"Shawshank Redemption, The (1994)\",0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
             str.println("1,American History X (1998),0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
             str.println("2,Z (1969),0|0|0|0|0|0|0|1|0|0|0|0|1|0|0|1|0|0|0|0");
-            str.println("3,\"Good bye, Lenin! (2003)\",0|0|0|0|1|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("4,\"Pan's Labyrinth (Laberinto del fauno, El) (2006)\",0|0|0|0|0|0|0|1|1|0|0|0|0|0|0|1|0|0|0|0");
-            str.println("5,Seven Pounds (2008),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("6,Song of the Sea (2014),0|0|1|1|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("3,\"Pan's Labyrinth (Laberinto del fauno, El) (2006)\",0|0|0|0|0|0|0|1|1|0|0|0|0|0|0|1|0|0|0|0");
+            str.println("4,Seven Pounds (2008),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("5,Song of the Sea (2014),0|0|1|1|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0");
         } finally {
             str.close();
         }
@@ -89,7 +88,6 @@ public class HIRModelBuilderTest {
         items.add((long)3);
         items.add((long)4);
         items.add((long)5);
-        items.add((long)6);
     }
 
     @Before
@@ -122,25 +120,25 @@ public class HIRModelBuilderTest {
         try {
             str.println("1,0,4,847117005");
             str.println("1,4,3,847116893");
-            str.println("1,6,1,847641973");
+            str.println("1,5,1,847641973");
             str.println("2,0,4,847116936");
             str.println("2,4,4,847641938");
-            str.println("2,6,4,847642118");
+            str.println("2,5,4,847642118");
             str.println("3,0,4,847642048");
             str.println("3,4,1,847641919");
-            str.println("3,6,3,847116787");
+            str.println("3,5,3,847116787");
         } finally {
             str.close();
         }
         rs2.add(Rating.create(1, 0, 4));
         rs2.add(Rating.create(1, 4, 3));
-        rs2.add(Rating.create(1, 6, 1));
+        rs2.add(Rating.create(1, 5, 1));
         rs2.add(Rating.create(2, 0, 4));
         rs2.add(Rating.create(2, 4, 4));
-        rs2.add(Rating.create(2, 6, 4));
+        rs2.add(Rating.create(2, 5, 4));
         rs2.add(Rating.create(3, 0, 1));
         rs2.add(Rating.create(3, 4, 1));
-        rs2.add(Rating.create(3, 6, 3));
+        rs2.add(Rating.create(3, 5, 3));
 
         dao2 = TextEventDAO.create(r, Formats.movieLensLatest());
         //dao2 = TextEventDAO.ratings(r, ",");
@@ -149,8 +147,7 @@ public class HIRModelBuilderTest {
     private HIRModel getModel(List<Rating> rs) {
         EventDAO dao = EventCollectionDAO.create(rs);
         UserEventDAO udao = new PrefetchingUserEventDAO(dao);
-        ItemDAO idao = new ItemListItemDAO(LongUtils.packedSet(0, 1, 2, 3, 4, 5, 6));
-        //ItemDAO idao = new PrefetchingItemDAO(dao);
+        ItemDAO idao = new ItemListItemDAO(LongUtils.packedSet(0, 1, 2, 3, 4, 5));
         UserHistorySummarizer summarizer = new RatingVectorUserHistorySummarizer();
         ItemItemBuildContextProvider contextFactory = new ItemItemBuildContextProvider(
                 udao, new DefaultUserVectorNormalizer(), summarizer);
@@ -161,7 +158,7 @@ public class HIRModelBuilderTest {
     private HIRModel getModel2() {
         EventDAO dao = EventCollectionDAO.create(rs2);
         UserEventDAO udao = new PrefetchingUserEventDAO(dao);
-        ItemDAO idao = new ItemListItemDAO(LongUtils.packedSet(0, 1, 2, 3, 4, 5, 6));
+        ItemDAO idao = new ItemListItemDAO(LongUtils.packedSet(0, 1, 2, 3, 4, 5));
         UserHistorySummarizer summarizer = new RatingVectorUserHistorySummarizer();
         ItemItemBuildContextProvider contextFactory = new ItemItemBuildContextProvider(
                 udao, new DefaultUserVectorNormalizer(), summarizer);
@@ -174,13 +171,12 @@ public class HIRModelBuilderTest {
 
         HIRModel model1 = getModel(rs1);
 
-        MutableSparseVector msv1 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector msv2 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector msv3 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector msv4 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector msv5 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector msv6 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector msv7 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector msv1 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector msv2 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector msv3 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector msv4 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector msv5 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector msv6 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
 
         msv1.set(0, 0);
         msv1.set(1, 0);
@@ -188,7 +184,6 @@ public class HIRModelBuilderTest {
         msv1.set(3, 0);
         msv1.set(4, 0);
         msv1.set(5, 0);
-        msv1.set(6, 0);
 
         msv2.set(0, 0);
         msv2.set(1, 0);
@@ -196,7 +191,6 @@ public class HIRModelBuilderTest {
         msv2.set(3, 0);
         msv2.set(4, 0);
         msv2.set(5, 0);
-        msv2.set(6, 0);
 
         msv3.set(0, 1);
         msv3.set(1, 0);
@@ -204,7 +198,6 @@ public class HIRModelBuilderTest {
         msv3.set(3, 0);
         msv3.set(4, 0);
         msv3.set(5, 0);
-        msv3.set(6, 0);
 
         msv4.set(0, 0);
         msv4.set(1, 0);
@@ -212,7 +205,6 @@ public class HIRModelBuilderTest {
         msv4.set(3, 0);
         msv4.set(4, 0);
         msv4.set(5, 0);
-        msv4.set(6, 0);
 
         msv5.set(0, 0);
         msv5.set(1, 0);
@@ -220,7 +212,6 @@ public class HIRModelBuilderTest {
         msv5.set(3, 0);
         msv5.set(4, 0);
         msv5.set(5, 0);
-        msv5.set(6, 0);
 
         msv6.set(0, 0);
         msv6.set(1, 0);
@@ -228,24 +219,13 @@ public class HIRModelBuilderTest {
         msv6.set(3, 0);
         msv6.set(4, 0);
         msv6.set(5, 0);
-        msv6.set(6, 0);
 
-        msv7.set(0, 0);
-        msv7.set(1, 0);
-        msv7.set(2, 0);
-        msv7.set(3, 0);
-        msv7.set(4, 0);
-        msv7.set(5, 0);
-        msv7.set(6, 0);
-
-        assertEquals(msv1, model1.getCoratingsVector(0));
-        assertEquals(msv2, model1.getCoratingsVector(1));
-        assertEquals(msv3, model1.getCoratingsVector(2));
- //       assertEquals(msv4, model1.getCoratingsVector(3, items));
-   //     assertEquals(msv5, model1.getCoratingsVector(4, items));
-     //   assertEquals(msv6, model1.getCoratingsVector(5, items));
-       // assertEquals(msv7, model1.getCoratingsVector(6, items));
-
+        assertEquals(msv1, model1.getCoratingsVector(0, items));
+        assertEquals(msv2, model1.getCoratingsVector(1, items));
+        assertEquals(msv3, model1.getCoratingsVector(2, items));
+        assertEquals(msv4, model1.getCoratingsVector(3, items));
+        assertEquals(msv5, model1.getCoratingsVector(4, items));
+        assertEquals(msv6, model1.getCoratingsVector(5, items));
     }
 
     @Test
@@ -253,29 +233,26 @@ public class HIRModelBuilderTest {
 
         HIRModel model2 = getModel2();
 
-        MutableSparseVector msv0 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector msv1 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector msv2 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector msv3 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector msv4 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector msv5 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector msv6 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector msv0 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector msv1 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector msv2 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector msv3 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector msv4 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector msv5 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
 
-        MutableSparseVector pv0 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector pv1 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector pv2 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector pv3 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector pv4 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector pv5 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
-        MutableSparseVector pv6 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector pv0 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector pv1 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector pv2 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector pv3 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector pv4 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
+        MutableSparseVector pv5 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
 
         msv0.set(0, 0);
         msv0.set(1, 0);
         msv0.set(2, 0);
         msv0.set(3, 0);
         msv0.set(4, 0.5);
-        msv0.set(5, 0);
-        msv0.set(6, 0.5);
+        msv0.set(5, 0.5);
 
         msv1.set(0, 0);
         msv1.set(1, 0);
@@ -283,7 +260,6 @@ public class HIRModelBuilderTest {
         msv1.set(3, 0);
         msv1.set(4, 0);
         msv1.set(5, 0);
-        msv1.set(6, 0);
 
         msv2.set(0, 0);
         msv2.set(1, 0);
@@ -291,7 +267,6 @@ public class HIRModelBuilderTest {
         msv2.set(3, 0);
         msv2.set(4, 0);
         msv2.set(5, 0);
-        msv2.set(6, 0);
 
         msv3.set(0, 0);
         msv3.set(1, 0);
@@ -299,115 +274,128 @@ public class HIRModelBuilderTest {
         msv3.set(3, 0);
         msv3.set(4, 0);
         msv3.set(5, 0);
-        msv3.set(6, 0);
 
         msv4.set(0, 0.5);
         msv4.set(1, 0);
         msv4.set(2, 0);
         msv4.set(3, 0);
         msv4.set(4, 0);
-        msv4.set(5, 0);
-        msv4.set(6, 0.5);
+        msv4.set(5, 0.5);
 
-        msv5.set(0, 0);
+        msv5.set(0, 0.5);
         msv5.set(1, 0);
         msv5.set(2, 0);
         msv5.set(3, 0);
-        msv5.set(4, 0);
+        msv5.set(4, 0.5);
         msv5.set(5, 0);
-        msv5.set(6, 0);
 
-        msv6.set(0, 0.5);
-        msv6.set(1, 0);
-        msv6.set(2, 0);
-        msv6.set(3, 0);
-        msv6.set(4, 0.5);
-        msv6.set(5, 0);
-        msv6.set(6, 0);
+        /* P =
 
-        pv0.set(0, 0.33333);
-        pv0.set(1, 0.33333);
-        pv0.set(2, 0.08333);
-        pv0.set(3, 0.08333);
-        pv0.set(4, 0.08333);
-        pv0.set(5, 0.08333);
-        pv0.set(6, 0);
+       7/20       7/20       1/10       1/10       1/10          0
+       7/20       7/20       1/10       1/10       1/10          0
+       1/15       1/15      17/30       7/30       1/15          0
+       1/15       1/15       7/30        2/5       1/15        1/6
+        1/5        1/5        1/5        1/5        1/5          0
+          0          0          0        1/6          0        5/6  */
 
-        //0.33333   0.33333   0.08333   0.08333   0.08333   0.08333 0.00000
+        pv0.set(0, 7 / 20.0);
+        pv0.set(1, 7 / 20.0);
+        pv0.set(2, 1 / 10.0);
+        pv0.set(3, 1 / 10.0);
+        pv0.set(4, 1 / 10.0);
+        pv0.set(5, 0.0);
 
-        pv1.set(0, 0.33333);
-        pv1.set(1, 0.33333);
-        pv1.set(2, 0.08333);
-        pv1.set(3, 0.08333);
-        pv1.set(4, 0.08333);
-        pv1.set(5, 0.08333);
-        pv1.set(6, 0);
+        pv1.set(0, 7 / 20.0);
+        pv1.set(1, 7 / 20.0);
+        pv1.set(2, 1 / 10.0);
+        pv1.set(3, 1 / 10.0);
+        pv1.set(4, 1 / 10.0);
+        pv1.set(5, 0);
 
-        // 0.05556   0.05556   0.55556   0.05556   0.22222   0.05556   0.00000
+        pv2.set(0, 1 / 15.0);
+        pv2.set(1, 1 / 15.0);
+        pv2.set(2, 17 / 30.0);
+        pv2.set(3, 7 / 30.0);
+        pv2.set(4, 1 / 15.0);
+        pv2.set(5, 0);
 
-        pv2.set(0, 0.05556);
-        pv2.set(1, 0.05556);
-        pv2.set(2, 0.05556);
-        pv2.set(3, 0.05556);
-        pv2.set(4, 0.22222);
-        pv2.set(5, 0.05556);
-        pv2.set(6, 0);
+        pv3.set(0, 1 / 15.0);
+        pv3.set(1, 1 / 15.0);
+        pv3.set(2, 7 / 30.0);
+        pv3.set(3, 2 / 5.0);
+        pv3.set(4, 1 / 15.0);
+        pv3.set(5, 1 / 6.0);
 
-        // 0.08333   0.08333   0.08333   0.58333   0.08333   0.08333   0.00000
+        pv4.set(0, 1 / 5.0);
+        pv4.set(1, 1 / 5.0);
+        pv4.set(2, 1 / 5.0);
+        pv4.set(3, 1 / 5.0);
+        pv4.set(4, 1 / 5.0);
+        pv4.set(5, 0);
 
-        pv3.set(0, 0.08333);
-        pv3.set(1, 0.08333);
-        pv3.set(2, 0.08333);
-        pv3.set(3, 0.58333);
-        pv3.set(4, 0.08333);
-        pv3.set(5, 0.08333);
-        pv3.set(6, 0);
+        pv5.set(0, 0.0);
+        pv5.set(1, 0.0);
+        pv5.set(2, 0.0);
+        pv5.set(3, 1.0 / 6.0);
+        pv5.set(4, 0.0);
+        pv5.set(5, 5.0 / 6.0);
 
-        // 0.05556   0.05556   0.22222   0.05556   0.38889   0.05556   0.16667
-
-        pv4.set(0, 0.05556);
-        pv4.set(1, 0.05556);
-        pv4.set(2, 0.22222);
-        pv4.set(3, 0.05556);
-        pv4.set(4, 0.38889);
-        pv4.set(5, 0.05556);
-        pv4.set(6, 0.16667);
-
-        // 0.16667   0.16667   0.16667   0.16667   0.16667   0.16667   0.00000
-
-        pv5.set(0, 0.16667);
-        pv5.set(1, 0.16667);
-        pv5.set(2, 0.16667);
-        pv5.set(3, 0.16667);
-        pv5.set(4, 0.16667);
-        pv5.set(5, 0.16667);
-        pv5.set(6, 0);
-
-        // 0.00000   0.00000   0.00000   0.00000   0.16667   0.00000   0.83333
-        pv6.set(0, 0);
-        pv6.set(1, 0);
-        pv6.set(2, 0);
-        pv6.set(3, 0);
-        pv6.set(4, 0.16667);
-        pv6.set(5, 0);
-        pv6.set(6, 0.83333);
-
-        //assertEquals(msv0, model2.getCoratingsVector(0));
-        //assertEquals(msv1, model2.getCoratingsVector(1));
-        //assertEquals(msv2, model2.getCoratingsVector(2));
-    //    assertEquals(msv3, model2.getCoratingsVector(3, items));
-      //  assertEquals(msv4, model2.getCoratingsVector(4, items));
-        //assertEquals(msv5, model2.getCoratingsVector(5, items));
-        //assertEquals(msv6, model2.getCoratingsVector(6, items));
-
+        assertEquals(msv0, model2.getCoratingsVector(0, items));
+        assertEquals(msv1, model2.getCoratingsVector(1, items));
+        assertEquals(msv2, model2.getCoratingsVector(2, items));
+        assertEquals(msv3, model2.getCoratingsVector(3, items));
+        assertEquals(msv4, model2.getCoratingsVector(4, items));
+        assertEquals(msv5, model2.getCoratingsVector(5, items));
 
         assertEquals(pv0, model2.getProximityVector(0, items));
         assertEquals(pv1, model2.getProximityVector(1, items));
         assertEquals(pv2, model2.getProximityVector(2, items));
         assertEquals(pv3, model2.getProximityVector(3, items));
         assertEquals(pv4, model2.getProximityVector(4, items));
-        assertEquals(pv5, model2.getProximityVector(5, items));
-        assertEquals(pv6, model2.getProximityVector(6, items));
+ //       assertEquals(pv5, model2.getProximityVector(5, items));
+
+        assertEquals((long)pv0.get(0), (long)model2.getProximityVector(0, items).get(0));
+        assertEquals((long)pv0.get(1), (long)model2.getProximityVector(0, items).get(1));
+        assertEquals((long)pv0.get(2), (long)model2.getProximityVector(0, items).get(2));
+        assertEquals((long)pv0.get(3), (long)model2.getProximityVector(0, items).get(3));
+        assertEquals((long)pv0.get(4), (long)model2.getProximityVector(0, items).get(4));
+        assertEquals((long)pv0.get(5), (long)model2.getProximityVector(0, items).get(5));
+
+        assertEquals((long)pv1.get(0), (long)model2.getProximityVector(1, items).get(0));
+        assertEquals((long)pv1.get(1), (long)model2.getProximityVector(1, items).get(1));
+        assertEquals((long)pv1.get(2), (long)model2.getProximityVector(1, items).get(2));
+        assertEquals((long)pv1.get(3), (long)model2.getProximityVector(1, items).get(3));
+        assertEquals((long)pv1.get(4), (long)model2.getProximityVector(1, items).get(4));
+        assertEquals((long)pv1.get(5), (long)model2.getProximityVector(1, items).get(5));
+
+        assertEquals((long)pv2.get(0), (long)model2.getProximityVector(2, items).get(0));
+        assertEquals((long)pv2.get(1), (long)model2.getProximityVector(2, items).get(1));
+        assertEquals((long)pv2.get(2), (long)model2.getProximityVector(2, items).get(2));
+        assertEquals((long)pv2.get(3), (long)model2.getProximityVector(2, items).get(3));
+        assertEquals((long)pv2.get(4), (long)model2.getProximityVector(2, items).get(4));
+        assertEquals((long)pv2.get(5), (long)model2.getProximityVector(2, items).get(5));
+
+        assertEquals((long)pv3.get(0), (long)model2.getProximityVector(3, items).get(0));
+        assertEquals((long)pv3.get(1), (long)model2.getProximityVector(3, items).get(1));
+        assertEquals((long)pv3.get(2), (long)model2.getProximityVector(3, items).get(2));
+        assertEquals((long)pv3.get(3), (long)model2.getProximityVector(3, items).get(3));
+        assertEquals((long)pv3.get(4), (long)model2.getProximityVector(3, items).get(4));
+        assertEquals((long)pv3.get(5), (long)model2.getProximityVector(3, items).get(5));
+
+        assertEquals((long)pv4.get(0), (long)model2.getProximityVector(4, items).get(0));
+        assertEquals((long)pv4.get(1), (long)model2.getProximityVector(4, items).get(1));
+        assertEquals((long)pv4.get(2), (long)model2.getProximityVector(4, items).get(2));
+        assertEquals((long)pv4.get(3), (long)model2.getProximityVector(4, items).get(3));
+        assertEquals((long)pv4.get(4), (long)model2.getProximityVector(4, items).get(4));
+        assertEquals((long)pv4.get(5), (long)model2.getProximityVector(4, items).get(5));
+
+        assertEquals((long)pv5.get(0), (long)model2.getProximityVector(5, items).get(0));
+        assertEquals((long)pv5.get(1), (long)model2.getProximityVector(5, items).get(1));
+        assertEquals((long)pv5.get(2), (long)model2.getProximityVector(5, items).get(2));
+        assertEquals((long)pv5.get(3), (long)model2.getProximityVector(5, items).get(3));
+        assertEquals((long)pv5.get(4), (long)model2.getProximityVector(5, items).get(4));
+        assertEquals((long)pv5.get(5), (long)model2.getProximityVector(5, items).get(5));
+
     }
 
 }

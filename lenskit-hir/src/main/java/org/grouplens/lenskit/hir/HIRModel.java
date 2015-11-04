@@ -49,13 +49,15 @@ public class HIRModel implements Serializable {
 
     private static final long serialVersionUID  = 1L;
 
-    private final Long2ObjectMap<ImmutableSparseVector> cmatrix;
+    //private final Long2ObjectMap<ImmutableSparseVector> cmatrix;
+    private final RealMatrix cmatrix;
 
     private final RealMatrix xmatrix;
 
     private final RealMatrix ymatrix;
 
-    public HIRModel(Long2ObjectMap<ImmutableSparseVector> cmatrix,
+//    public HIRModel(Long2ObjectMap<ImmutableSparseVector> cmatrix,
+    public HIRModel(RealMatrix cmatrix,
                     RealMatrix xmatrix,
                     RealMatrix ymatrix) {
         this.cmatrix = cmatrix;
@@ -64,9 +66,27 @@ public class HIRModel implements Serializable {
     }
 
 
-    public MutableSparseVector getCoratingsVector(long item) {
-        ImmutableSparseVector row = cmatrix.get(item);
-        return row.mutableCopy();
+//    public MutableSparseVector getCoratingsVector(long item) {
+        //ImmutableSparseVector row = cmatrix.get(item);
+
+    public MutableSparseVector getCoratingsVector(long item, Collection<Long> items) {
+
+        RealVector data = cmatrix.getRowVector((int) item);
+
+        Map<Long, Double> forResults = new HashMap<>();
+
+        LongIterator iter = LongIterators.asLongIterator(items.iterator());
+
+        int i = 0;
+        while (iter.hasNext()) {
+            final long meti = iter.nextLong();
+            forResults.put(meti, data.getEntry(i));
+            i++;
+        }
+
+        return MutableSparseVector.create(forResults);
+
+        //return row.mutableCopy();
     }
 
     public MutableSparseVector getProximityVector(long item, Collection<Long> items) {

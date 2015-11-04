@@ -89,6 +89,7 @@ public class HIRItemScorer extends AbstractItemScorer {
         SparseVector historyVector = RatingVectorUserHistorySummarizer.makeRatingVector(history);
 
         List<Result> results = new ArrayList<>();
+        List<Result> results1 = new ArrayList<>();
 
         MutableSparseVector preferenceVector = MutableSparseVector.create(idao.getItemIds(), 0);
 
@@ -112,7 +113,7 @@ public class HIRItemScorer extends AbstractItemScorer {
             final double prefValue = e.getValue();
             if (prefValue != 0) {
                 final long prefKey = e.getKey();
-                MutableSparseVector coratingsVector = model.getCoratingsVector(prefKey);
+                MutableSparseVector coratingsVector = model.getCoratingsVector(prefKey, items);
                 coratingsVector.multiply(directAssociation);
 
                 MutableSparseVector proximityVector = model.getProximityVector(prefKey, items);
@@ -132,9 +133,12 @@ public class HIRItemScorer extends AbstractItemScorer {
             }
         }
 
-        assert !results.isEmpty();
+        if (rankingVector.sum() < 1.1 && rankingVector.sum() > 0.9) {
+            return Results.newResultMap(results);
+        } else {
+            return Results.newResultMap(results1);
+        }
 
-        return Results.newResultMap(results);
     }
 
     public HIRModel getModel() {

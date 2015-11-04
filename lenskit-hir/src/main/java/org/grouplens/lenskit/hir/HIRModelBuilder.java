@@ -39,7 +39,8 @@ import javax.inject.Provider;
 @SuppressWarnings("deprecation")
 public class HIRModelBuilder implements Provider<HIRModel> {
 
-    private final DirectAssociationMatrix DAMatrix;
+
+    private final DirectAssociation DAMatrix;
 
     private final RowStochasticFactorOfProximity RSMatrix;
 
@@ -53,7 +54,7 @@ public class HIRModelBuilder implements Provider<HIRModel> {
                            @Transient ItemItemBuildContext context) {
 
         buildContext = context;
-        DAMatrix = new DirectAssociationMatrix(dao);
+        DAMatrix = new DirectAssociation(dao);
         RSMatrix = new RowStochasticFactorOfProximity(dao, gDao);
         TFMatrix = new TransposedFactorOfProximity(dao, gDao);
     }

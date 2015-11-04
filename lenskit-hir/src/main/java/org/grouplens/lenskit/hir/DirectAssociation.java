@@ -21,29 +21,22 @@
 
 package org.grouplens.lenskit.hir;
 
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
-import org.lenskit.data.dao.ItemDAO;
 import org.grouplens.lenskit.vectors.*;
+import org.lenskit.data.dao.ItemDAO;
 
-import java.util.Map;
 
 /**
- * Created by chrysalag. Processes ratings data for HIR Item Scorer.
+ * Created by chrysalag.
  */
 
-@SuppressWarnings("deprecation")
-public class DirectAssociationMatrix {
+public class DirectAssociation {
 
-    private Long2ObjectMap<MutableSparseVector> workMatrix;
-
-    //private RealMatrix testMatrix;
+    private RealMatrix workMatrix;
 
     int itemSize;
 
@@ -53,18 +46,10 @@ public class DirectAssociationMatrix {
      *
      * @param dao       The DataAccessObject interfacing with the data for the model
      */
-    public DirectAssociationMatrix(ItemDAO dao) {
+    public DirectAssociation(ItemDAO dao) {
         LongSet items = dao.getItemIds();
         itemSize = items.size();
-//        testMatrix = MatrixUtils.createRealMatrix(itemSize, itemSize);
-
-        workMatrix = new Long2ObjectOpenHashMap<>(items.size());
-
-        LongIterator iter = items.iterator();
-        while (iter.hasNext()) {
-            long item = iter.nextLong();
-            workMatrix.put(item, MutableSparseVector.create(items));
-        }
+        workMatrix = MatrixUtils.createRealMatrix(itemSize, itemSize);
     }
 
     /**
@@ -81,17 +66,13 @@ public class DirectAssociationMatrix {
         }
         // to profit from matrix symmetry, always store by the lesser id
         if (id1 == id2) {
-            workMatrix.get(id1).set(id2, 0);
-            workMatrix.get(id2).set(id1, 0);
-        //    testMatrix.setEntry((int) id1, (int)id2, 0);
+            workMatrix.setEntry((int) id1, (int)id2, 0);
         } else {
             int coratings = 0;
             for (Pair<VectorEntry,VectorEntry> pair: Vectors.fastIntersect(itemVec1, itemVec2)) {
                 coratings++;
             }
-            workMatrix.get(id1).set(id2, coratings);
-            workMatrix.get(id2).set(id1, coratings);
-        //    testMatrix.setEntry((int) id1, (int) id2, coratings);
+            workMatrix.setEntry((int) id1, (int) id2, coratings);
         }
     }
 
@@ -99,39 +80,22 @@ public class DirectAssociationMatrix {
      * @return A matrix of item corating values to be used by
      *         a {@code HIRItemScorer}.
      */
-    public Long2ObjectMap<ImmutableSparseVector> buildMatrix() {
-    //public RealMatrix buildMatrix() {
+    public RealMatrix buildMatrix() {
 
         if (workMatrix == null) {
             throw new IllegalStateException("Model is already built");
         }
 
-        Long2ObjectMap<ImmutableSparseVector> matrix =
-                new Long2ObjectOpenHashMap<ImmutableSparseVector>(workMatrix.size());
 
-        for (MutableSparseVector vec : workMatrix.values()) {
-            double sum = vec.sum();
-            if ( sum != 0 ) {
-                vec.multiply(1/sum);
-            }
-        }
-
-
-/*        for (int i=0; i<itemSize; i++) {
-            RealVector testRow = testMatrix.getRowVector(i);
+        for (int i=0; i<itemSize; i++) {
+            RealVector testRow = workMatrix.getRowVector(i);
             double testSum = testRow.getL1Norm();
             if (testSum != 0){
                 testRow.mapDivideToSelf(testSum);
-                testMatrix.setRowVector(i, testRow);
+                workMatrix.setRowVector(i, testRow);
             }
 
-        }*/
-
-        for (Map.Entry<Long, MutableSparseVector> e : workMatrix.entrySet()) {
-            matrix.put(e.getKey(), e.getValue().freeze());
         }
-
-        workMatrix = null;
-        return matrix;
+        return workMatrix;
     }
 }
