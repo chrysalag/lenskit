@@ -23,7 +23,6 @@ package org.grouplens.lenskit.hir;
 
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
@@ -40,49 +39,48 @@ public class RowStochasticFactorOfProximity {
 
     private RealMatrix rowStochastic;
 
+    private int itemSize;
+    private int genreSize;
+
     public RowStochasticFactorOfProximity(ItemDAO dao,
                                    ItemGenreDAO gDao) {
         LongSet items = dao.getItemIds();
-        int genreSize = gDao.getGenreSize();
-        int itemsSize = items.size();
+        genreSize = gDao.getGenreSize();
+        itemSize = items.size();
 
-        double[][] data = new double[itemsSize][genreSize];
+        double[][] data = new double[itemSize][genreSize];
 
-        //prepareGenresMatrix = MatrixUtils.createRealMatrix(itemsSize, genreSize);
         prepareGenresMatrix = MatrixUtils.createRealMatrix(data);
-        //rowStochastic = MatrixUtils.createRealMatrix(itemsSize, genreSize);
         rowStochastic = MatrixUtils.createRealMatrix(data);
 
         int i = 0;
         LongIterator iter = items.iterator();
         while (iter.hasNext()) {
             long item = iter.nextLong();
-            //    double[][] rowData = new double[1][genreSize];
-            //    rowData[0] = gDao.getItemGenre(item).toArray();
-            //    if (rowData[0] != null) {
-            //        prepareGenresMatrix.setRow(i, rowData[0]);
-            //    }
-                prepareGenresMatrix.setRowVector(i, gDao.getItemGenre(item));
-                i++;
+            prepareGenresMatrix.setRowVector(i, gDao.getItemGenre(item));
+            i++;
         }
     }
 
     public RealMatrix RowStochastic() {
+        //int itemsSize = rowStochastic.getRowDimension();
 
-        rowStochastic = prepareGenresMatrix.copy();
-
-        int itemsSize = rowStochastic.getRowDimension();
-
-        for (int i = 0; i < itemsSize; i++) {
-            RealVector forIter = rowStochastic.getRowVector(i);
+        for (int i = 0; i < itemSize; i++) {
+            RealVector forIter = prepareGenresMatrix.getRowVector(i);
 
             double sum = forIter.getL1Norm();
 
-            RealVector stochasticRow = forIter.mapDivide(sum);
+            if (sum!=0) {
+                forIter.mapDivideToSelf(sum);
+                //RealVector stochasticRow = forIter.mapDivide(sum);
+                rowStochastic.setRowVector(i, forIter);
 
-            double[] row = stochasticRow.toArray();
+ //               double[] row = stochasticRow.toArray();
 
-            rowStochastic.setRow(i, row);
+   //             rowStochastic.setRow(i, row);
+            }
+
+
         }
 
         return rowStochastic;

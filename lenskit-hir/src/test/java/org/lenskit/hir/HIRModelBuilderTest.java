@@ -21,9 +21,10 @@
 
 package org.lenskit.hir;
 
-import groovy.json.internal.MapItemValue;
 import org.grouplens.lenskit.data.history.RatingVectorUserHistorySummarizer;
 import org.grouplens.lenskit.data.history.UserHistorySummarizer;
+import org.grouplens.lenskit.data.text.Formats;
+import org.grouplens.lenskit.data.text.TextEventDAO;
 import org.grouplens.lenskit.hir.HIRModel;
 import org.grouplens.lenskit.hir.HIRModelBuilder;
 import org.grouplens.lenskit.transform.normalize.DefaultUserVectorNormalizer;
@@ -34,8 +35,8 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.lenskit.data.dao.*;
 import org.lenskit.data.ratings.Rating;
-import org.lenskit.knn.item.model.ItemItemBuildContext;
 import org.lenskit.knn.item.model.ItemItemBuildContextProvider;
+import org.lenskit.util.collections.LongUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,49 +60,108 @@ public class HIRModelBuilderTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
     MapItemGenreDAO gdao;
-    Collection<Long> items;
-
+    MapItemNameDAO idao;
+    Collection<Long> items = new HashSet<>();
+    EventDAO dao1, dao2;
+    List<Rating> rs1 = new ArrayList<>();
+    List<Rating> rs2 = new ArrayList<>();
 
     @Before
     public void createFile() throws IOException {
         File f = folder.newFile("genres.csv");
         PrintStream str = new PrintStream(f);
         try {
-            str.println("318,\"Shawshank Redemption, The (1994)\",0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("2329,American History X (1998),0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("5475,Z (1969),0|0|0|0|0|0|0|1|0|0|0|0|1|0|0|1|0|0|0|0");
-            str.println("7323,\"Good bye, Lenin! (2003)\",0|0|0|0|1|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("48394,\"Pan's Labyrinth (Laberinto del fauno, El) (2006)\",0|0|0|0|0|0|0|1|1|0|0|0|0|0|0|1|0|0|0|0");
-            str.println("64716,Seven Pounds (2008),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("117444,Song of the Sea (2014),0|0|1|1|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("140214,Triple Dog (2010),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|1|0|0|0|0");
+            str.println("0,\"Shawshank Redemption, The (1994)\",0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("1,American History X (1998),0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("2,Z (1969),0|0|0|0|0|0|0|1|0|0|0|0|1|0|0|1|0|0|0|0");
+            str.println("3,\"Good bye, Lenin! (2003)\",0|0|0|0|1|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("4,\"Pan's Labyrinth (Laberinto del fauno, El) (2006)\",0|0|0|0|0|0|0|1|1|0|0|0|0|0|0|1|0|0|0|0");
+            str.println("5,Seven Pounds (2008),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("6,Song of the Sea (2014),0|0|1|1|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0");
         } finally {
             str.close();
         }
         gdao = MapItemGenreDAO.fromCSVFile(f);
-        items = MapItemGenreDAO.fromCSVFile(f).getItemIds();
+        idao = MapItemNameDAO.fromCSVFile(f);
+        items.add((long)0);
+        items.add((long)1);
+        items.add((long)2);
+        items.add((long)3);
+        items.add((long)4);
+        items.add((long)5);
+        items.add((long)6);
     }
 
-/*    @Before
-    public void takeItemData(){
-        Collection<Long> items = new HashSet<>();
-        items.add((long)318);
-        items.add((long)2329);
-        items.add((long)5475);
-        items.add((long)7323);
-        items.add((long)48394);
-        items.add((long)64716);
-        items.add((long)117444);
-        items.add((long)140214);
+    @Before
+    public void createRating1() throws IOException {
+        File r1 = folder.newFile("ratings1.csv");
+        PrintStream str = new PrintStream(r1);
+        rs1.add(Rating.create(1,0,5));
+        rs1.add(Rating.create(1,2,5));
+        rs1.add(Rating.create(2,0,4));
+        rs1.add(Rating.create(2,2,4));
+        rs1.add(Rating.create(3,1,5));
+        rs1.add(Rating.create(4,1,1));
+        try {
+            str.println("1,0,5,847117005");
+            str.println("1,2,5,847117006");
+            str.println("2,0,4,847117007");
+            str.println("2,2,4,847117008");
+            str.println("3,1,5,847117009");
+            str.println("4,1,1,847117010");
+        } finally {
+            str.close();
+        }
+        dao1 = TextEventDAO.create(r1, Formats.movieLensLatest());
+    }
 
+    @Before
+    public void createRating2() throws IOException {
+        File r = folder.newFile("ratings2.csv");
+        PrintStream str = new PrintStream(r);
+        try {
+            str.println("1,0,4,847117005");
+            str.println("1,4,3,847116893");
+            str.println("1,6,1,847641973");
+            str.println("2,0,4,847116936");
+            str.println("2,4,4,847641938");
+            str.println("2,6,4,847642118");
+            str.println("3,0,4,847642048");
+            str.println("3,4,1,847641919");
+            str.println("3,6,3,847116787");
+        } finally {
+            str.close();
+        }
+        rs2.add(Rating.create(1, 0, 4));
+        rs2.add(Rating.create(1, 4, 3));
+        rs2.add(Rating.create(1, 6, 1));
+        rs2.add(Rating.create(2, 0, 4));
+        rs2.add(Rating.create(2, 4, 4));
+        rs2.add(Rating.create(2, 6, 4));
+        rs2.add(Rating.create(3, 0, 1));
+        rs2.add(Rating.create(3, 4, 1));
+        rs2.add(Rating.create(3, 6, 3));
 
+        dao2 = TextEventDAO.create(r, Formats.movieLensLatest());
+        //dao2 = TextEventDAO.ratings(r, ",");
+    }
 
-    }*/
-
-    private HIRModel getModel(List<Rating> ratings) {
-        EventDAO dao = EventCollectionDAO.create(ratings);
+    private HIRModel getModel(List<Rating> rs) {
+        EventDAO dao = EventCollectionDAO.create(rs);
         UserEventDAO udao = new PrefetchingUserEventDAO(dao);
-        ItemDAO idao = new PrefetchingItemDAO(dao);
+        ItemDAO idao = new ItemListItemDAO(LongUtils.packedSet(0, 1, 2, 3, 4, 5, 6));
+        //ItemDAO idao = new PrefetchingItemDAO(dao);
+        UserHistorySummarizer summarizer = new RatingVectorUserHistorySummarizer();
+        ItemItemBuildContextProvider contextFactory = new ItemItemBuildContextProvider(
+                udao, new DefaultUserVectorNormalizer(), summarizer);
+        HIRModelBuilder provider = new HIRModelBuilder(idao, gdao, contextFactory.get());
+        return provider.get();
+    }
+
+    private HIRModel getModel2() {
+        EventDAO dao = EventCollectionDAO.create(rs2);
+        UserEventDAO udao = new PrefetchingUserEventDAO(dao);
+        ItemDAO idao = new ItemListItemDAO(LongUtils.packedSet(0, 1, 2, 3, 4, 5, 6));
         UserHistorySummarizer summarizer = new RatingVectorUserHistorySummarizer();
         ItemItemBuildContextProvider contextFactory = new ItemItemBuildContextProvider(
                 udao, new DefaultUserVectorNormalizer(), summarizer);
@@ -112,336 +172,242 @@ public class HIRModelBuilderTest {
     @Test
     public void testBuild1() {
 
-        List<Rating> rs = new ArrayList<>();
-            rs.add(Rating.create(1, 318, 5));
-            rs.add(Rating.create(2, 318, 4));
-            rs.add(Rating.create(3, 48394, 5));
-            rs.add(Rating.create(4, 48394, 1));
-            rs.add(Rating.create(1, 117444, 5));
-            rs.add(Rating.create(2, 117444, 4));
+        HIRModel model1 = getModel(rs1);
 
-            HIRModel model1 = getModel(rs);
+        MutableSparseVector msv1 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector msv2 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector msv3 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector msv4 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector msv5 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector msv6 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector msv7 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
 
-            MutableSparseVector msv318 = MutableSparseVector.create(318, 48394, 117444);
-            MutableSparseVector msv48394 = MutableSparseVector.create(318, 48394, 117444);
-            MutableSparseVector msv117444 = MutableSparseVector.create(318, 48394, 117444);
+        msv1.set(0, 0);
+        msv1.set(1, 0);
+        msv1.set(2, 1);
+        msv1.set(3, 0);
+        msv1.set(4, 0);
+        msv1.set(5, 0);
+        msv1.set(6, 0);
 
-            msv318.set(318, 0);
-            msv318.set(48394, 0);
-            msv318.set(117444, 1);
+        msv2.set(0, 0);
+        msv2.set(1, 0);
+        msv2.set(2, 0);
+        msv2.set(3, 0);
+        msv2.set(4, 0);
+        msv2.set(5, 0);
+        msv2.set(6, 0);
 
-            msv48394.set(318, 0);
-            msv48394.set(48394, 0);
-            msv48394.set(117444, 0);
+        msv3.set(0, 1);
+        msv3.set(1, 0);
+        msv3.set(2, 0);
+        msv3.set(3, 0);
+        msv3.set(4, 0);
+        msv3.set(5, 0);
+        msv3.set(6, 0);
 
-            msv117444.set(318, 1);
-            msv117444.set(48394, 0);
-            msv117444.set(117444, 0);
+        msv4.set(0, 0);
+        msv4.set(1, 0);
+        msv4.set(2, 0);
+        msv4.set(3, 0);
+        msv4.set(4, 0);
+        msv4.set(5, 0);
+        msv4.set(6, 0);
 
-            assertEquals(msv318, model1.getCoratingsVector(318));
-            assertEquals(msv48394, model1.getCoratingsVector(48394));
-            assertEquals(msv117444, model1.getCoratingsVector(117444));
+        msv5.set(0, 0);
+        msv5.set(1, 0);
+        msv5.set(2, 0);
+        msv5.set(3, 0);
+        msv5.set(4, 0);
+        msv5.set(5, 0);
+        msv5.set(6, 0);
+
+        msv6.set(0, 0);
+        msv6.set(1, 0);
+        msv6.set(2, 0);
+        msv6.set(3, 0);
+        msv6.set(4, 0);
+        msv6.set(5, 0);
+        msv6.set(6, 0);
+
+        msv7.set(0, 0);
+        msv7.set(1, 0);
+        msv7.set(2, 0);
+        msv7.set(3, 0);
+        msv7.set(4, 0);
+        msv7.set(5, 0);
+        msv7.set(6, 0);
+
+        assertEquals(msv1, model1.getCoratingsVector(0));
+        assertEquals(msv2, model1.getCoratingsVector(1));
+        assertEquals(msv3, model1.getCoratingsVector(2));
+ //       assertEquals(msv4, model1.getCoratingsVector(3, items));
+   //     assertEquals(msv5, model1.getCoratingsVector(4, items));
+     //   assertEquals(msv6, model1.getCoratingsVector(5, items));
+       // assertEquals(msv7, model1.getCoratingsVector(6, items));
+
     }
 
-/*
     @Test
     public void testBuild2() {
 
-        List<Rating> rs = new ArrayList<Rating>();
-        rs.add(Rating.create(1, 318, 4));
-        rs.add(Rating.create(2, 318, 5));
-        rs.add(Rating.create(3, 318, 4));
-        rs.add(Rating.create(1, 48394, 3));
-        rs.add(Rating.create(2, 48394, 5));
-        rs.add(Rating.create(3, 48394, 1));
-        rs.add(Rating.create(1, 117444, 1));
-        rs.add(Rating.create(2, 117444, 5));
-        rs.add(Rating.create(3, 117444, 3));
+        HIRModel model2 = getModel2();
 
-        HIRModel model2 = getModel(rs);
+        MutableSparseVector msv0 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector msv1 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector msv2 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector msv3 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector msv4 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector msv5 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector msv6 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
 
-        MutableSparseVector msv1 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-        MutableSparseVector msv2 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-        MutableSparseVector msv3 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-        MutableSparseVector msv4 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-        MutableSparseVector msv5 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-        MutableSparseVector msv6 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-        MutableSparseVector msv7 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-        MutableSparseVector msv8 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
+        MutableSparseVector pv0 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector pv1 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector pv2 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector pv3 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector pv4 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector pv5 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+        MutableSparseVector pv6 = MutableSparseVector.create(0, 1, 2, 3, 4, 5, 6);
+
+        msv0.set(0, 0);
+        msv0.set(1, 0);
+        msv0.set(2, 0);
+        msv0.set(3, 0);
+        msv0.set(4, 0.5);
+        msv0.set(5, 0);
+        msv0.set(6, 0.5);
+
+        msv1.set(0, 0);
+        msv1.set(1, 0);
+        msv1.set(2, 0);
+        msv1.set(3, 0);
+        msv1.set(4, 0);
+        msv1.set(5, 0);
+        msv1.set(6, 0);
+
+        msv2.set(0, 0);
+        msv2.set(1, 0);
+        msv2.set(2, 0);
+        msv2.set(3, 0);
+        msv2.set(4, 0);
+        msv2.set(5, 0);
+        msv2.set(6, 0);
+
+        msv3.set(0, 0);
+        msv3.set(1, 0);
+        msv3.set(2, 0);
+        msv3.set(3, 0);
+        msv3.set(4, 0);
+        msv3.set(5, 0);
+        msv3.set(6, 0);
+
+        msv4.set(0, 0.5);
+        msv4.set(1, 0);
+        msv4.set(2, 0);
+        msv4.set(3, 0);
+        msv4.set(4, 0);
+        msv4.set(5, 0);
+        msv4.set(6, 0.5);
+
+        msv5.set(0, 0);
+        msv5.set(1, 0);
+        msv5.set(2, 0);
+        msv5.set(3, 0);
+        msv5.set(4, 0);
+        msv5.set(5, 0);
+        msv5.set(6, 0);
+
+        msv6.set(0, 0.5);
+        msv6.set(1, 0);
+        msv6.set(2, 0);
+        msv6.set(3, 0);
+        msv6.set(4, 0.5);
+        msv6.set(5, 0);
+        msv6.set(6, 0);
+
+        pv0.set(0, 0.33333);
+        pv0.set(1, 0.33333);
+        pv0.set(2, 0.08333);
+        pv0.set(3, 0.08333);
+        pv0.set(4, 0.08333);
+        pv0.set(5, 0.08333);
+        pv0.set(6, 0);
+
+        //0.33333   0.33333   0.08333   0.08333   0.08333   0.08333 0.00000
+
+        pv1.set(0, 0.33333);
+        pv1.set(1, 0.33333);
+        pv1.set(2, 0.08333);
+        pv1.set(3, 0.08333);
+        pv1.set(4, 0.08333);
+        pv1.set(5, 0.08333);
+        pv1.set(6, 0);
+
+        // 0.05556   0.05556   0.55556   0.05556   0.22222   0.05556   0.00000
+
+        pv2.set(0, 0.05556);
+        pv2.set(1, 0.05556);
+        pv2.set(2, 0.05556);
+        pv2.set(3, 0.05556);
+        pv2.set(4, 0.22222);
+        pv2.set(5, 0.05556);
+        pv2.set(6, 0);
+
+        // 0.08333   0.08333   0.08333   0.58333   0.08333   0.08333   0.00000
+
+        pv3.set(0, 0.08333);
+        pv3.set(1, 0.08333);
+        pv3.set(2, 0.08333);
+        pv3.set(3, 0.58333);
+        pv3.set(4, 0.08333);
+        pv3.set(5, 0.08333);
+        pv3.set(6, 0);
+
+        // 0.05556   0.05556   0.22222   0.05556   0.38889   0.05556   0.16667
+
+        pv4.set(0, 0.05556);
+        pv4.set(1, 0.05556);
+        pv4.set(2, 0.22222);
+        pv4.set(3, 0.05556);
+        pv4.set(4, 0.38889);
+        pv4.set(5, 0.05556);
+        pv4.set(6, 0.16667);
+
+        // 0.16667   0.16667   0.16667   0.16667   0.16667   0.16667   0.00000
+
+        pv5.set(0, 0.16667);
+        pv5.set(1, 0.16667);
+        pv5.set(2, 0.16667);
+        pv5.set(3, 0.16667);
+        pv5.set(4, 0.16667);
+        pv5.set(5, 0.16667);
+        pv5.set(6, 0);
+
+        // 0.00000   0.00000   0.00000   0.00000   0.16667   0.00000   0.83333
+        pv6.set(0, 0);
+        pv6.set(1, 0);
+        pv6.set(2, 0);
+        pv6.set(3, 0);
+        pv6.set(4, 0.16667);
+        pv6.set(5, 0);
+        pv6.set(6, 0.83333);
+
+        //assertEquals(msv0, model2.getCoratingsVector(0));
+        //assertEquals(msv1, model2.getCoratingsVector(1));
+        //assertEquals(msv2, model2.getCoratingsVector(2));
+    //    assertEquals(msv3, model2.getCoratingsVector(3, items));
+      //  assertEquals(msv4, model2.getCoratingsVector(4, items));
+        //assertEquals(msv5, model2.getCoratingsVector(5, items));
+        //assertEquals(msv6, model2.getCoratingsVector(6, items));
 
 
-        MutableSparseVector pv1 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-        MutableSparseVector pv2 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-        MutableSparseVector pv3 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-        MutableSparseVector pv4 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-        MutableSparseVector pv5 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-        MutableSparseVector pv6 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-        MutableSparseVector pv7 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-        MutableSparseVector pv8 = MutableSparseVector.create(318, 2329, 5475, 7323, 48394, 64716, 117444, 140214);
-
-        // 318
-        msv1.set(318, 0);
-        msv1.set(2329, 0);
-        msv1.set(5475, 0);
-        msv1.set(7323, 0);
-        msv1.set(48394, 1/8);
-        msv1.set(64716, 0);
-        msv1.set(117444, 1/8);
-        msv1.set(140214, 0);
-
-        // 2329
-        msv2.set(318, 0);
-        msv2.set(2329, 0);
-        msv2.set(5475, 0);
-        msv2.set(7323, 0);
-        msv2.set(48394, 0);
-        msv2.set(64716, 0);
-        msv2.set(117444, 0);
-        msv2.set(140214, 0);
-
-        // 5475
-        msv3.set(318, 0);
-        msv3.set(2329, 0);
-        msv3.set(5475, 0);
-        msv3.set(7323, 0);
-        msv3.set(48394, 0);
-        msv3.set(64716, 0);
-        msv3.set(117444, 0);
-        msv3.set(140214, 0);
-
-        // 7323
-        msv4.set(318, 0);
-        msv4.set(2329, 0);
-        msv4.set(5475, 0);
-        msv4.set(7323, 0);
-        msv4.set(48394, 0);
-        msv4.set(64716, 0);
-        msv4.set(117444, 0);
-        msv4.set(140214, 0);
-
-        // 48394
-        msv5.set(318, 1/8);
-        msv5.set(2329, 0);
-        msv5.set(5475, 0);
-        msv5.set(7323, 0);
-        msv5.set(48394, 0);
-        msv5.set(64716, 0);
-        msv5.set(117444, 1/8);
-        msv5.set(140214, 0);
-
-        // 64716
-        msv6.set(318, 0);
-        msv6.set(2329, 0);
-        msv6.set(5475, 0);
-        msv6.set(7323, 0);
-        msv6.set(48394, 0);
-        msv6.set(64716, 0);
-        msv6.set(117444, 0);
-        msv6.set(140214, 0);
-
-        // 117444
-        msv7.set(318, 1/8);
-        msv7.set(2329, 0);
-        msv7.set(5475, 0);
-        msv7.set(7323, 0);
-        msv7.set(48394, 1/8);
-        msv7.set(64716, 0);
-        msv7.set(117444, 0);
-        msv7.set(140214, 0);
-
-        // 140214
-        msv8.set(318, 0);
-        msv8.set(2329, 0);
-        msv8.set(5475, 0);
-        msv8.set(7323, 0);
-        msv8.set(48394, 0);
-        msv8.set(64716, 0);
-        msv8.set(117444, 0);
-        msv8.set(140214, 0);
-
-        // 318
-        pv1.set(318, 0.32143);
-        pv1.set(2329, 0.32143);
-        pv1.set(5475, 0.07143);
-        pv1.set(7323, 0.07143);
-        pv1.set(48394, 0.07143);
-        pv1.set(64716, 0.07143);
-        pv1.set(117444, 0);
-        pv1.set(140214, 0.07143);
-
-        // 2329
-        pv2.set(318, 0.32143);
-        pv2.set(2329, 0.32143);
-        pv2.set(5475, 0.07143);
-        pv2.set(7323, 0.07143);
-        pv2.set(48394, 0.07143);
-        pv2.set(64716, 0.07143);
-        pv2.set(117444, 0);
-        pv2.set(140214, 0.07143);
-
-        // 5475
-        pv3.set(318, 0.04762);
-        pv3.set(2329, 0.04762);
-        pv3.set(5475, 0.49206);
-        pv3.set(7323, 0.04762);
-        pv3.set(48394, 0.15873);
-        pv3.set(64716,  0.04762);
-        pv3.set(117444, 0);
-        pv3.set(140214, 0.15873);
-
-        // 7323
-        pv4.set(318, 0.07143);
-        pv4.set(2329, 0.07143);
-        pv4.set(5475, 0.07143);
-        pv4.set(7323, 0.57143);
-        pv4.set(48394, 0.07143);
-        pv4.set(64716, 0.07143);
-        pv4.set(117444, 0);
-        pv4.set(140214, 0.07143);
-
-        // 48394
-        pv5.set(318, 0.04762);
-        pv5.set(2329, 0.04762);
-        pv5.set(5475, 0.15873);
-        pv5.set(7323, 0.04762);
-        pv5.set(48394, 0.32540);
-        pv5.set(64716, 0.04762);
-        pv5.set(117444, 0.16667);
-        pv5.set(140214, 0.15873);
-
-        // 64716
-        pv6.set(318, 0.14286);
-        pv6.set(2329, 0.14286);
-        pv6.set(5475, 0.14286);
-        pv6.set(7323, 0.14286);
-        pv6.set(48394, 0.14286);
-        pv6.set(64716, 0.14286);
-        pv6.set(117444, 0);
-        pv6.set(140214, 0.14286);
-
-        // 117444
-        pv7.set(318, 0);
-        pv7.set(2329, 0);
-        pv7.set(5475, 0);
-        pv7.set(7323, 0);
-        pv7.set(48394, 0.16667);
-        pv7.set(64716, 0);
-        pv7.set(117444, 0.83333);
-        pv7.set(140214, 0);
-
-        // 140214
-        pv8.set(318, 0.07143);
-        pv8.set(2329, 0.07143);
-        pv8.set(5475, 0.23810);
-        pv8.set(7323, 0.07143);
-        pv8.set(48394, 0.23810);
-        pv8.set(64716, 0.07143);
-        pv8.set(117444, 0);
-        pv8.set(140214, 0.23810);
-
-        assertEquals(msv1, model2.getCoratingsVector(318));
-        assertEquals(msv2, model2.getCoratingsVector(2329));
-        assertEquals(msv3, model2.getCoratingsVector(5475));
-        assertEquals(msv4, model2.getCoratingsVector(7323));
-        assertEquals(msv5, model2.getCoratingsVector(48394));
-        assertEquals(msv6, model2.getCoratingsVector(64716));
-        assertEquals(msv7, model2.getCoratingsVector(117444));
-        assertEquals(msv8, model2.getCoratingsVector(140214));
-
-        assertEquals(pv1, model2.getProximityVector(318, items));
-        assertEquals(pv2, model2.getProximityVector(2329, items));
-        assertEquals(pv3, model2.getProximityVector(5475, items));
-        assertEquals(pv4, model2.getProximityVector(7323, items));
-        assertEquals(pv5, model2.getProximityVector(48394, items));
-        assertEquals(pv6, model2.getProximityVector(64716, items));
-        assertEquals(pv7, model2.getProximityVector(117444, items));
-        assertEquals(pv8, model2.getProximityVector(140214, items));
-    }*/
-
-    /*
-    @Test
-    public void testBuild3() {
-
-        List<Rating> rs = new ArrayList<Rating>();
-        rs.add(Rating.create(1, 6, 4));
-        rs.add(Rating.create(2, 6, 2));
-        rs.add(Rating.create(1, 7, 3));
-        rs.add(Rating.create(2, 7, 2));
-        rs.add(Rating.create(3, 7, 5));
-        rs.add(Rating.create(4, 7, 2));
-        rs.add(Rating.create(1, 8, 3));
-        rs.add(Rating.create(2, 8, 4));
-        rs.add(Rating.create(3, 8, 3));
-        rs.add(Rating.create(4, 8, 2));
-        rs.add(Rating.create(5, 8, 3));
-        rs.add(Rating.create(6, 8, 2));
-        rs.add(Rating.create(1, 9, 3));
-        rs.add(Rating.create(3, 9, 4));
-
-        SlopeOneModel model3 = getModel(rs);
-
-        assertEquals(2, model3.getCoratings(6, 7));
-        assertEquals(2, model3.getCoratings(7, 6));
-        assertEquals(2, model3.getCoratings(6, 8));
-        assertEquals(2, model3.getCoratings(8, 6));
-        assertEquals(1, model3.getCoratings(6, 9));
-        assertEquals(1, model3.getCoratings(9, 6));
-        assertEquals(4, model3.getCoratings(7, 8));
-        assertEquals(4, model3.getCoratings(8, 7));
-        assertEquals(2, model3.getCoratings(7, 9));
-        assertEquals(2, model3.getCoratings(9, 7));
-        assertEquals(2, model3.getCoratings(8, 9));
-        assertEquals(2, model3.getCoratings(9, 8));
-        assertEquals(0.5, model3.getDeviation(6, 7), EPSILON);
-        assertEquals(-0.5, model3.getDeviation(7, 6), EPSILON);
-        assertEquals(-0.5, model3.getDeviation(6, 8), EPSILON);
-        assertEquals(0.5, model3.getDeviation(8, 6), EPSILON);
-        assertEquals(1, model3.getDeviation(6, 9), EPSILON);
-        assertEquals(-1, model3.getDeviation(9, 6), EPSILON);
-        assertEquals(0, model3.getDeviation(7, 8), EPSILON);
-        assertEquals(0, model3.getDeviation(8, 7), EPSILON);
-        assertEquals(0.5, model3.getDeviation(7, 9), EPSILON);
-        assertEquals(-0.5, model3.getDeviation(9, 7), EPSILON);
-        assertEquals(-0.5, model3.getDeviation(8, 9), EPSILON);
-        assertEquals(0.5, model3.getDeviation(9, 8), EPSILON);
+        assertEquals(pv0, model2.getProximityVector(0, items));
+        assertEquals(pv1, model2.getProximityVector(1, items));
+        assertEquals(pv2, model2.getProximityVector(2, items));
+        assertEquals(pv3, model2.getProximityVector(3, items));
+        assertEquals(pv4, model2.getProximityVector(4, items));
+        assertEquals(pv5, model2.getProximityVector(5, items));
+        assertEquals(pv6, model2.getProximityVector(6, items));
     }
 
-    @Test
-    public void testBuild4() {
-        List<Rating> rs = new ArrayList<Rating>();
-        rs.add(Rating.create(1, 4, 3.5));
-        rs.add(Rating.create(2, 4, 5));
-        rs.add(Rating.create(3, 5, 4.25));
-        rs.add(Rating.create(2, 6, 3));
-        rs.add(Rating.create(1, 7, 4));
-        rs.add(Rating.create(2, 7, 4));
-        rs.add(Rating.create(3, 7, 1.5));
-
-        SlopeOneModel model4 = getModel(rs);
-
-        assertEquals(0, model4.getCoratings(4, 5));
-        assertEquals(0, model4.getCoratings(5, 4));
-        assertEquals(1, model4.getCoratings(4, 6));
-        assertEquals(1, model4.getCoratings(6, 4));
-        assertEquals(2, model4.getCoratings(4, 7));
-        assertEquals(2, model4.getCoratings(7, 4));
-        assertEquals(0, model4.getCoratings(5, 6));
-        assertEquals(0, model4.getCoratings(6, 5));
-        assertEquals(1, model4.getCoratings(5, 7));
-        assertEquals(1, model4.getCoratings(7, 5));
-        assertEquals(1, model4.getCoratings(6, 7));
-        assertEquals(1, model4.getCoratings(7, 6));
-        assertEquals(Double.NaN, model4.getDeviation(4, 5), 0);
-        assertEquals(Double.NaN, model4.getDeviation(5, 4), 0);
-        assertEquals(2, model4.getDeviation(4, 6), EPSILON);
-        assertEquals(-2, model4.getDeviation(6, 4), EPSILON);
-        assertEquals(0.25, model4.getDeviation(4, 7), EPSILON);
-        assertEquals(-0.25, model4.getDeviation(7, 4), EPSILON);
-        assertEquals(Double.NaN, model4.getDeviation(5, 6), 0);
-        assertEquals(Double.NaN, model4.getDeviation(6, 5), 0);
-        assertEquals(2.75, model4.getDeviation(5, 7), EPSILON);
-        assertEquals(-2.75, model4.getDeviation(7, 5), EPSILON);
-        assertEquals(-1, model4.getDeviation(6, 7), EPSILON);
-        assertEquals(1, model4.getDeviation(7, 6), EPSILON);
-    } */
 }

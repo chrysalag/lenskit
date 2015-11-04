@@ -35,29 +35,28 @@ import org.lenskit.data.dao.ItemGenreDAO;
 
 public class TransposedFactorOfProximity {
 
-    private RealMatrix prepareGenresMatrix;
-
     private RealMatrix transposed;
+
+    private int genreSize;
+
+    private int itemSize;
 
     public TransposedFactorOfProximity(ItemDAO dao,
                                    ItemGenreDAO gDao) {
+
         LongSet items = dao.getItemIds();
-        int genreSize = gDao.getGenreSize();
-        int itemsSize = items.size();
+        genreSize = gDao.getGenreSize();
+        itemSize = items.size();
 
-        double[][] dataPGM = new double[itemsSize][genreSize];
-        double[][] dataTransposed = new double[genreSize][itemsSize];
+        double[][] dataTransposed = new double[genreSize][itemSize];
 
-        //prepareGenresMatrix = MatrixUtils.createRealMatrix(items.size(), genreSize);
-        prepareGenresMatrix = MatrixUtils.createRealMatrix(dataPGM);
         transposed = MatrixUtils.createRealMatrix(dataTransposed);
 
         int i = 0;
         LongIterator iter = items.iterator();
         while (iter.hasNext()) {
             long item = iter.nextLong();
-            prepareGenresMatrix.setRow(i, gDao.getItemGenre(item).toArray());
-            //prepareGenresMatrix.setRowVector((int) item, gDao.getItemGenre(item));
+            transposed.setColumnVector(i, gDao.getItemGenre(item));
             i++;
         }
     }
@@ -65,22 +64,18 @@ public class TransposedFactorOfProximity {
 
     public RealMatrix ColumnStochastic() {
 
-        transposed = prepareGenresMatrix.transpose();
+        //int genreSize = transposed.getRowDimension();
 
-        int itemsSize = transposed.getRowDimension();
-
-        for (int i = 0; i < itemsSize; i++) {
+        for (int i = 0; i < genreSize; i++) {
             RealVector forIter = transposed.getRowVector(i);
-
             double sum = forIter.getL1Norm();
-
-            RealVector stochasticRow = forIter.mapDivide(sum);
-
-            transposed.setRowVector(i, stochasticRow);
+            if (sum!=0){
+                //RealVector stochasticRow = forIter.mapDivide(sum);
+                forIter.mapDivideToSelf(sum);
+                transposed.setRowVector(i, forIter);
+            }
         }
 
         return transposed;
-
     }
-
 }

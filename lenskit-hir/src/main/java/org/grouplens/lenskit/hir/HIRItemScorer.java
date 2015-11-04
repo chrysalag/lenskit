@@ -25,10 +25,8 @@ package org.grouplens.lenskit.hir;
  * Created by chrysalag. Implements the Item Scorer of HIR algorithm.
  */
 
-import it.unimi.dsi.fastutil.longs.LongIterator;
-import it.unimi.dsi.fastutil.longs.LongIterators;
-import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealVector;
+import org.grouplens.lenskit.transform.normalize.UserVectorNormalizer;
 import org.grouplens.lenskit.vectors.MutableSparseVector;
 import org.lenskit.api.Result;
 import org.lenskit.api.ResultMap;
@@ -43,7 +41,6 @@ import org.lenskit.data.ratings.PreferenceDomain;
 import org.grouplens.lenskit.vectors.SparseVector;
 import org.grouplens.lenskit.vectors.VectorEntry;
 import org.lenskit.api.ItemScorer;
-import org.lenskit.inject.Transient;
 import org.lenskit.results.Results;
 
 import javax.annotation.Nonnull;
@@ -70,8 +67,7 @@ public class HIRItemScorer extends AbstractItemScorer {
                          ItemDAO idao,
                          @Nullable PreferenceDomain dom,
                          @DirectAssociationParameter double direct,
-                         @ProximityParameter double prox
-                         ) {
+                         @ProximityParameter double prox) {
         this.dao = dao;
         this.model = model;
         this.idao = idao;
@@ -83,68 +79,60 @@ public class HIRItemScorer extends AbstractItemScorer {
     @Nonnull
     @Override
     public ResultMap scoreWithDetails(long user, @Nonnull Collection<Long> items) {
-        assert items.size() > 0;
-
-        Set<Long> item = idao.getItemIds();
 
         UserHistory<Rating> history = dao.getEventsForUser(user, Rating.class);
+
         if (history == null) {
             history = History.forUser(user);
         }
+
         SparseVector historyVector = RatingVectorUserHistorySummarizer.makeRatingVector(history);
 
         List<Result> results = new ArrayList<>();
 
-        Set<Long> keys = new TreeSet<>(item);
+        MutableSparseVector preferenceVector = MutableSparseVector.create(idao.getItemIds(), 0);
 
-        MutableSparseVector preferenceVector = MutableSparseVector.create(keys);
-        MutableSparseVector coratingsVector;
-        MutableSparseVector proximityVector;
-
-
-        preferenceVector.fill(0);
-        // the vector is empty
-        assert !preferenceVector.isEmpty();
-
-        assert preferenceVector.size() != 0;
-        // but has the keys (more on this later)
-        assert preferenceVector.keyDomain().equals(keys);
-
-//        assert preferenceVector.size() == keys.size();
-
-        // the vector is empty
-//        assert preferenceVector.size() == 0;
-        // but has the keys (more on this later)
-         assert preferenceVector.keyDomain().equals(keys);
-      //  assert preferenceVector.keySet() == preferenceVector.keyDomain();
-        //assert preferenceVector.keySet() == keys;
-
+        double total = 0.0;
         for (VectorEntry e: historyVector.fast()) {
             long key = e.getKey();
             double value = e.getValue();
             preferenceVector.set(key, value);
-
+            total = total + value;
         }
 
-        double preferenceInResults = 1 - directAssociation - proximity;
-        preferenceVector.multiply(preferenceInResults);
+        if (total != 0) {
+            preferenceVector.multiply(1/total);
+        }
+
+        final double preferenceInResults = 1 - directAssociation - proximity;
+        MutableSparseVector rankingVector = preferenceVector.copy();
+        rankingVector.multiply(preferenceInResults);
 
         for (VectorEntry e: preferenceVector.fast()) {
-            if (e.getValue() != 0) {
-                double prefValue = e.getValue();
-                long prefKey = e.getKey();
-                coratingsVector = model.getCoratingsVector(prefKey);
+            final double prefValue = e.getValue();
+            if (prefValue != 0) {
+                final long prefKey = e.getKey();
+                MutableSparseVector coratingsVector = model.getCoratingsVector(prefKey);
                 coratingsVector.multiply(directAssociation);
 
-                proximityVector = model.getProximityVector(prefKey, items);
+                MutableSparseVector proximityVector = model.getProximityVector(prefKey, items);
                 proximityVector.multiply(proximity);
 
                 coratingsVector.add(proximityVector);
                 coratingsVector.multiply(prefValue);
 
-                preferenceVector.add(coratingsVector);
+                rankingVector.add(coratingsVector);
             }
         }
+
+        for (VectorEntry e: rankingVector.fast()) {
+            final long key = e.getKey();
+            if (!historyVector.containsKey(key)) {
+                results.add(Results.create(key, e.getValue()));
+            }
+        }
+
+        assert !results.isEmpty();
 
         return Results.newResultMap(results);
     }
@@ -153,4 +141,3 @@ public class HIRItemScorer extends AbstractItemScorer {
         return model;
     }
 }
-

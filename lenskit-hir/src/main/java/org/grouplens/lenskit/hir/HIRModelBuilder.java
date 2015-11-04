@@ -68,10 +68,8 @@ public class HIRModelBuilder implements Provider<HIRModel> {
             LongIterator inner = items.iterator();
             while (inner.hasNext()) {
                 final long item2 = inner.nextLong();
-                //if (item1 != item2) {
-                    SparseVector vec2 = buildContext.itemVector(item2);
-                    DAMatrix.putItemPair(item1, vec1, item2, vec2);
-                //}
+                SparseVector vec2 = buildContext.itemVector(item2);
+                DAMatrix.putItemPair(item1, vec1, item2, vec2);
             }
         }
 

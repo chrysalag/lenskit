@@ -21,6 +21,7 @@
 
 package org.grouplens.lenskit.hir;
 
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongIterators;
@@ -64,37 +65,26 @@ public class HIRModel implements Serializable {
 
 
     public MutableSparseVector getCoratingsVector(long item) {
-
         ImmutableSparseVector row = cmatrix.get(item);
         return row.mutableCopy();
     }
 
     public MutableSparseVector getProximityVector(long item, Collection<Long> items) {
 
-        double[][] data = new double[1][xmatrix.getRowDimension()];
+        RealVector data = xmatrix.getRowVector((int) item);
+        RealVector resM = ymatrix.preMultiply(data);
 
-        //double[] row = xmatrix.getRow((int) item);
-        RealMatrix row = MatrixUtils.createRealMatrix(data);
-        RealVector rowrow = row.getRowVector(0);
-        //RealVector row = xmatrix.getRowVector((int) item);
-        Map<Long, Double> forRes = new HashMap<>();
+        Map<Long, Double> forResults = new HashMap<>();
 
         LongIterator iter = LongIterators.asLongIterator(items.iterator());
-
-        //double[] res = ymatrix.preMultiply(row);
-        //double[] res = new double[xmatrix.getRowDimension()];
-        RealVector resM = ymatrix.operate(rowrow);
-        double[] res = resM.toArray();
-
 
         int i = 0;
         while (iter.hasNext()) {
             final long meti = iter.nextLong();
-            forRes.put(meti, res[i]);
+            forResults.put(meti, resM.getEntry(i));
             i++;
         }
 
-        return MutableSparseVector.create(forRes);
-
+        return MutableSparseVector.create(forResults);
     }
 }

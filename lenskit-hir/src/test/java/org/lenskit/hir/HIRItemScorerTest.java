@@ -86,7 +86,7 @@ public class HIRItemScorerTest {
         idao = MapItemGenreDAO.fromCSVFile(f).getItemIds();
     }
 
-    @Test
+   /* @Test
     public void testPredict1() throws RecommenderBuildException {
 
         List<Rating> rs = new ArrayList<Rating>();
@@ -134,5 +134,5 @@ public class HIRItemScorerTest {
         //assertEquals(0.014286, predictor.score(4, 2329).getScore(), EPSILON);
 //        assertEquals(3.482143, predictor.score(1, 318).getScore(), EPSILON);
 //        assertEquals(3.385714, predictor.score(2, 318).getScore(), EPSILON);
-    }
+    }*/
 }

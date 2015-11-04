@@ -26,6 +26,9 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
 import org.lenskit.data.dao.ItemDAO;
 import org.grouplens.lenskit.vectors.*;
 
@@ -40,6 +43,10 @@ public class DirectAssociationMatrix {
 
     private Long2ObjectMap<MutableSparseVector> workMatrix;
 
+    //private RealMatrix testMatrix;
+
+    int itemSize;
+
     /**
      * Creates an accumulator to process rating data and generate the necessary data for
      * a {@code HIRItemScorer}.
@@ -48,6 +55,8 @@ public class DirectAssociationMatrix {
      */
     public DirectAssociationMatrix(ItemDAO dao) {
         LongSet items = dao.getItemIds();
+        itemSize = items.size();
+//        testMatrix = MatrixUtils.createRealMatrix(itemSize, itemSize);
 
         workMatrix = new Long2ObjectOpenHashMap<>(items.size());
 
@@ -74,6 +83,7 @@ public class DirectAssociationMatrix {
         if (id1 == id2) {
             workMatrix.get(id1).set(id2, 0);
             workMatrix.get(id2).set(id1, 0);
+        //    testMatrix.setEntry((int) id1, (int)id2, 0);
         } else {
             int coratings = 0;
             for (Pair<VectorEntry,VectorEntry> pair: Vectors.fastIntersect(itemVec1, itemVec2)) {
@@ -81,6 +91,7 @@ public class DirectAssociationMatrix {
             }
             workMatrix.get(id1).set(id2, coratings);
             workMatrix.get(id2).set(id1, coratings);
+        //    testMatrix.setEntry((int) id1, (int) id2, coratings);
         }
     }
 
@@ -89,6 +100,7 @@ public class DirectAssociationMatrix {
      *         a {@code HIRItemScorer}.
      */
     public Long2ObjectMap<ImmutableSparseVector> buildMatrix() {
+    //public RealMatrix buildMatrix() {
 
         if (workMatrix == null) {
             throw new IllegalStateException("Model is already built");
@@ -103,6 +115,17 @@ public class DirectAssociationMatrix {
                 vec.multiply(1/sum);
             }
         }
+
+
+/*        for (int i=0; i<itemSize; i++) {
+            RealVector testRow = testMatrix.getRowVector(i);
+            double testSum = testRow.getL1Norm();
+            if (testSum != 0){
+                testRow.mapDivideToSelf(testSum);
+                testMatrix.setRowVector(i, testRow);
+            }
+
+        }*/
 
         for (Map.Entry<Long, MutableSparseVector> e : workMatrix.entrySet()) {
             matrix.put(e.getKey(), e.getValue().freeze());

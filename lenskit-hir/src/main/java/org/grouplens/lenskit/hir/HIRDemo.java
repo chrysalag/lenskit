@@ -19,36 +19,34 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-
-package org.lenskit.hir;
+package org.grouplens.lenskit.hir;
 
 import org.grouplens.lenskit.data.text.Formats;
 import org.grouplens.lenskit.data.text.TextEventDAO;
-import org.grouplens.lenskit.hir.HIRItemScorer;
 import org.lenskit.LenskitConfiguration;
 import org.lenskit.LenskitRecommender;
 import org.lenskit.LenskitRecommenderEngine;
 import org.lenskit.api.ItemRecommender;
 import org.lenskit.api.ItemScorer;
 import org.lenskit.api.Result;
-import org.lenskit.api.ResultList;
-import org.lenskit.baseline.BaselineScorer;
-import org.lenskit.baseline.ItemMeanRatingItemScorer;
-import org.lenskit.baseline.UserMeanBaseline;
-import org.lenskit.baseline.UserMeanItemScorer;
-import org.lenskit.data.dao.*;
+import org.lenskit.data.dao.EventDAO;
+import org.lenskit.data.dao.ItemNameDAO;
+import org.lenskit.data.dao.MapItemGenreDAO;
+import org.lenskit.data.dao.MapItemNameDAO;
 import org.lenskit.data.ratings.PreferenceDomain;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by chrysalag.
  */
+
+
 public class HIRDemo implements Runnable {
+
     public static void main(String[] args) {
         HIRDemo demo = new HIRDemo(args);
         try {
@@ -60,10 +58,11 @@ public class HIRDemo implements Runnable {
         }
     }
 
-    private String delimiter = "\t";
-    private File inputFile = new File("data/ratings.csv");
-    private File movieFile = new File("data/movies.csv");
-    private File genresFile = new File("data/genres.csv");
+
+    private File inputFile = new File("/home/chrysalag/IdeaProjects/lenskit/lenskit-hir/data/ratings.csv");
+    private File movieFile = new File("/home/chrysalag/IdeaProjects/lenskit/lenskit-hir/data/movies.csv");
+    private File genreFile = new File("/home/chrysalag/IdeaProjects/lenskit/lenskit-hir/data/genres.csv");
+
     private List<Long> users;
 
     public HIRDemo(String[] args) {
@@ -77,6 +76,7 @@ public class HIRDemo implements Runnable {
         EventDAO dao = TextEventDAO.create(inputFile, Formats.movieLensLatest());
         ItemNameDAO names;
         MapItemGenreDAO genres;
+
         try {
             names = MapItemNameDAO.fromCSVFile(movieFile, 1);
         } catch (IOException e) {
@@ -84,39 +84,48 @@ public class HIRDemo implements Runnable {
         }
 
         try {
-            genres = MapItemGenreDAO.fromCSVFile(genresFile);
+            genres = MapItemGenreDAO.fromCSVFile(genreFile);
         } catch (IOException g) {
-            throw new RuntimeException("cannot load genres", g);
+            throw new RuntimeException("cannot load names", g);
         }
 
-        LenskitConfiguration config = new LenskitConfiguration();
+        // Next: load the LensKit algorithm configuration
+        LenskitConfiguration config = null;
+        /*try {
+            config = ConfigHelpers.load(new File("etc/hir.groovy"));
+        } catch (IOException e) {
+            throw new RuntimeException("could not load configuration", e);
+        }*/
+        config.bind(ItemScorer.class).to(HIRItemScorer.class);
+        // Add our data component to the configuration
+        config.addComponent(dao);
         config.bind(EventDAO.class).to(dao);
         config.bind(MapItemGenreDAO.class).to(genres);
-        config.bind(ItemScorer.class).to(HIRItemScorer.class);
-        config.bind(PreferenceDomain.class).to(new PreferenceDomain(0, 5));
-        // factory.setComponent(UserVectorNormalizer.class, IdentityVectorNormalizer.class);
-        config.bind(BaselineScorer.class, ItemScorer.class)
-              .to(UserMeanItemScorer.class);
-        config.bind(UserMeanBaseline.class, ItemScorer.class)
-              .to(ItemMeanRatingItemScorer.class);
+        config.bind(PreferenceDomain.class).to(new PreferenceDomain(0, 1));
 
+        // Now that we have a configuration, build a recommender engine from the configuration
+        // and data source. This will compute the similarity matrix and return a recommender
+        // engine that uses it.
         LenskitRecommenderEngine engine = LenskitRecommenderEngine.build(config);
 
-        try (LenskitRecommender hir = engine.createRecommender()) {
-            ItemRecommender ihir = hir.getItemRecommender();
-            assert ihir != null;
+        // Finally, get the recommender and use it.
+        try (LenskitRecommender rec = engine.createRecommender()) {
+            // we want to recommend items
+            ItemRecommender irec = rec.getItemRecommender();
+            assert irec != null; // not null because we configured one
+            // for users
             for (long user : users) {
-                ResultList recs = ihir.recommendWithDetails(user, 10, null, null);
+                // get 10 recommendation for the user
+                List<Result> recs = irec.recommendWithDetails(user, 5, null, null);
                 System.out.format("Recommendations for user %d:\n", user);
                 for (Result item : recs) {
-                    String name =  names.getItemName(item.getId());
+                    String name = names.getItemName(item.getId());
                     System.out.format("\t%d (%s): %.2f\n", item.getId(), name, item.getScore());
+                    System.out.format("\t %s \n", name);
                 }
             }
         }
-
-
-
     }
+
 
 }
