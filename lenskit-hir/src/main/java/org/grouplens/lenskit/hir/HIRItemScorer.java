@@ -22,7 +22,6 @@
 package org.grouplens.lenskit.hir;
 
 /**
- * {@author Lagodimou Chrysanthi}
  * An {@link ItemScorer} that implements the HIR algorithm.
  */
 
@@ -94,8 +93,8 @@ public class HIRItemScorer extends AbstractItemScorer {
 
         double total = 0.0;
         for (VectorEntry e: historyVector.fast()) {
-            long key = e.getKey();
-            double value = e.getValue();
+            final long key = e.getKey();
+            final double value = e.getValue();
             preferenceVector.set(key, value);
             total = total + value;
         }

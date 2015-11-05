@@ -45,7 +45,7 @@ public class RowStochasticFactorOfProximity {
      */
 
     public RowStochasticFactorOfProximity(ItemDAO dao,
-                                   ItemGenreDAO gDao) {
+                                          ItemGenreDAO gDao) {
         LongSet items = dao.getItemIds();
         int genreSize = gDao.getGenreSize();
         itemSize = items.size();
