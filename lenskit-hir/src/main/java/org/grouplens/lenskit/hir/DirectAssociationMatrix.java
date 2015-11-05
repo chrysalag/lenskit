@@ -33,7 +33,7 @@ public class DirectAssociationMatrix {
 
     private RealMatrix workMatrix;
 
-    int itemSize;
+    private int itemSize;
 
     /**
      * Creates a matrix to process rating data and generate coratings for
