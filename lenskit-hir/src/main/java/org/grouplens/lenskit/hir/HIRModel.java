@@ -21,17 +21,13 @@
 
 package org.grouplens.lenskit.hir;
 
-import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongIterators;
-import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.grouplens.grapht.annotation.DefaultProvider;
 import org.grouplens.lenskit.vectors.MutableSparseVector;
 import org.lenskit.inject.Shareable;
-import org.grouplens.lenskit.vectors.ImmutableSparseVector;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -49,14 +45,12 @@ public class HIRModel implements Serializable {
 
     private static final long serialVersionUID  = 1L;
 
-    //private final Long2ObjectMap<ImmutableSparseVector> cmatrix;
     private final RealMatrix cmatrix;
 
     private final RealMatrix xmatrix;
 
     private final RealMatrix ymatrix;
 
-//    public HIRModel(Long2ObjectMap<ImmutableSparseVector> cmatrix,
     public HIRModel(RealMatrix cmatrix,
                     RealMatrix xmatrix,
                     RealMatrix ymatrix) {
@@ -64,10 +58,6 @@ public class HIRModel implements Serializable {
         this.xmatrix = xmatrix;
         this.ymatrix = ymatrix;
     }
-
-
-//    public MutableSparseVector getCoratingsVector(long item) {
-        //ImmutableSparseVector row = cmatrix.get(item);
 
     public MutableSparseVector getCoratingsVector(long item, Collection<Long> items) {
 
@@ -86,7 +76,6 @@ public class HIRModel implements Serializable {
 
         return MutableSparseVector.create(forResults);
 
-        //return row.mutableCopy();
     }
 
     public MutableSparseVector getProximityVector(long item, Collection<Long> items) {

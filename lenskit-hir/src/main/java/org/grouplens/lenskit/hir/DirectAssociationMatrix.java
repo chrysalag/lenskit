@@ -34,7 +34,7 @@ import org.lenskit.data.dao.ItemDAO;
  * Created by chrysalag.
  */
 
-public class DirectAssociation {
+public class DirectAssociationMatrix {
 
     private RealMatrix workMatrix;
 
@@ -46,7 +46,7 @@ public class DirectAssociation {
      *
      * @param dao       The DataAccessObject interfacing with the data for the model
      */
-    public DirectAssociation(ItemDAO dao) {
+    public DirectAssociationMatrix(ItemDAO dao) {
         LongSet items = dao.getItemIds();
         itemSize = items.size();
         workMatrix = MatrixUtils.createRealMatrix(itemSize, itemSize);
@@ -64,7 +64,6 @@ public class DirectAssociation {
         if (workMatrix == null) {
             throw new IllegalStateException("Model is already built");
         }
-        // to profit from matrix symmetry, always store by the lesser id
         if (id1 == id2) {
             workMatrix.setEntry((int) id1, (int)id2, 0);
         } else {

@@ -39,14 +39,12 @@ public class TransposedFactorOfProximity {
 
     private int genreSize;
 
-    private int itemSize;
-
     public TransposedFactorOfProximity(ItemDAO dao,
                                    ItemGenreDAO gDao) {
 
         LongSet items = dao.getItemIds();
         genreSize = gDao.getGenreSize();
-        itemSize = items.size();
+        int itemSize = items.size();
 
         double[][] dataTransposed = new double[genreSize][itemSize];
 
@@ -64,13 +62,10 @@ public class TransposedFactorOfProximity {
 
     public RealMatrix ColumnStochastic() {
 
-        //int genreSize = transposed.getRowDimension();
-
         for (int i = 0; i < genreSize; i++) {
             RealVector forIter = transposed.getRowVector(i);
             double sum = forIter.getL1Norm();
             if (sum!=0){
-                //RealVector stochasticRow = forIter.mapDivide(sum);
                 forIter.mapDivideToSelf(sum);
                 transposed.setRowVector(i, forIter);
             }

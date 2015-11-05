@@ -40,12 +40,11 @@ public class RowStochasticFactorOfProximity {
     private RealMatrix rowStochastic;
 
     private int itemSize;
-    private int genreSize;
 
     public RowStochasticFactorOfProximity(ItemDAO dao,
                                    ItemGenreDAO gDao) {
         LongSet items = dao.getItemIds();
-        genreSize = gDao.getGenreSize();
+        int genreSize = gDao.getGenreSize();
         itemSize = items.size();
 
         double[][] data = new double[itemSize][genreSize];
@@ -63,7 +62,6 @@ public class RowStochasticFactorOfProximity {
     }
 
     public RealMatrix RowStochastic() {
-        //int itemsSize = rowStochastic.getRowDimension();
 
         for (int i = 0; i < itemSize; i++) {
             RealVector forIter = prepareGenresMatrix.getRowVector(i);
@@ -72,15 +70,8 @@ public class RowStochasticFactorOfProximity {
 
             if (sum!=0) {
                 forIter.mapDivideToSelf(sum);
-                //RealVector stochasticRow = forIter.mapDivide(sum);
                 rowStochastic.setRowVector(i, forIter);
-
- //               double[] row = stochasticRow.toArray();
-
-   //             rowStochastic.setRow(i, row);
             }
-
-
         }
 
         return rowStochastic;
