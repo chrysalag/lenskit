@@ -35,7 +35,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by chrysalag. Implements the Model of HIR algorithm.
+ * A model for a {@link HIRItemScorer}.
+ * Stores calculated proximity values and number of co-rating users for each item pair.
  */
 
 @DefaultProvider(HIRModelBuilder.class)

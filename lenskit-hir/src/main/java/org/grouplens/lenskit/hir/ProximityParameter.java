@@ -29,8 +29,12 @@ import javax.inject.Qualifier;
 import java.lang.annotation.*;
 
 /**
- * Created by chrysalag.
+ * Proximity Parameter.
+ * It determines how much is the ranking vector returned from
+ * {@code HIRItemScorer} affected by the inter-item relationships
+ * that derive from the categorization of items.
  */
+
 @Documented
 @DefaultDouble(0.3)
 @Parameter(Double.class)

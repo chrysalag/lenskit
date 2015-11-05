@@ -29,11 +29,6 @@ import org.apache.commons.math3.linear.RealVector;
 import org.grouplens.lenskit.vectors.*;
 import org.lenskit.data.dao.ItemDAO;
 
-
-/**
- * Created by chrysalag.
- */
-
 public class DirectAssociationMatrix {
 
     private RealMatrix workMatrix;
@@ -41,11 +36,12 @@ public class DirectAssociationMatrix {
     int itemSize;
 
     /**
-     * Creates an accumulator to process rating data and generate the necessary data for
+     * Creates a matrix to process rating data and generate coratings for
      * a {@code HIRItemScorer}.
      *
      * @param dao       The DataAccessObject interfacing with the data for the model
      */
+
     public DirectAssociationMatrix(ItemDAO dao) {
         LongSet items = dao.getItemIds();
         itemSize = items.size();
@@ -61,9 +57,7 @@ public class DirectAssociationMatrix {
      * @param itemVec2 The rating vector of the second item.
      */
     public void putItemPair(long id1, SparseVector itemVec1, long id2, SparseVector itemVec2) {
-        if (workMatrix == null) {
-            throw new IllegalStateException("Model is already built");
-        }
+
         if (id1 == id2) {
             workMatrix.setEntry((int) id1, (int)id2, 0);
         } else {
@@ -80,11 +74,6 @@ public class DirectAssociationMatrix {
      *         a {@code HIRItemScorer}.
      */
     public RealMatrix buildMatrix() {
-
-        if (workMatrix == null) {
-            throw new IllegalStateException("Model is already built");
-        }
-
 
         for (int i=0; i<itemSize; i++) {
             RealVector testRow = workMatrix.getRowVector(i);

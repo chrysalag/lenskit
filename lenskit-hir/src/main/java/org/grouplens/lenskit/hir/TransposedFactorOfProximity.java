@@ -29,15 +29,20 @@ import org.apache.commons.math3.linear.RealVector;
 import org.lenskit.data.dao.ItemDAO;
 import org.lenskit.data.dao.ItemGenreDAO;
 
-/**
- * Created by chrysalag.
- */
-
 public class TransposedFactorOfProximity {
 
     private RealMatrix transposed;
 
     private int genreSize;
+
+    /**
+     * Creates a matrix to process genre data and generate the second factor of the proximity
+     * matrix needed for a {@code HIRItemScorer}.
+     *
+     * @param dao    The DataAccessObject interfacing with the item data for the model
+     * @param gDao   The genreDataAccessObject interfacing with the genre data for the model
+     *
+     */
 
     public TransposedFactorOfProximity(ItemDAO dao,
                                    ItemGenreDAO gDao) {
@@ -58,6 +63,12 @@ public class TransposedFactorOfProximity {
             i++;
         }
     }
+
+    /**
+     * @return A matrix containing the row stochastic values of the matrix
+     * that contains the information about the item categorization transposed,
+     * to be used by a {@code HIRItemScorer}.
+     */
 
 
     public RealMatrix ColumnStochastic() {

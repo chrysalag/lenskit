@@ -29,17 +29,20 @@ import org.apache.commons.math3.linear.RealVector;
 import org.lenskit.data.dao.ItemDAO;
 import org.lenskit.data.dao.ItemGenreDAO;
 
-/**
- * Created by chrysalag.
- */
-
 public class RowStochasticFactorOfProximity {
-
-    private RealMatrix prepareGenresMatrix;
 
     private RealMatrix rowStochastic;
 
     private int itemSize;
+
+    /**
+     * Creates a matrix to process genre data and generate the first factor of the proximity
+     * matrix needed for a {@code HIRItemScorer}.
+     *
+     * @param dao    The DataAccessObject interfacing with the item data for the model
+     * @param gDao   The genreDataAccessObject interfacing with the genre data for the model
+     *
+     */
 
     public RowStochasticFactorOfProximity(ItemDAO dao,
                                    ItemGenreDAO gDao) {
@@ -49,22 +52,27 @@ public class RowStochasticFactorOfProximity {
 
         double[][] data = new double[itemSize][genreSize];
 
-        prepareGenresMatrix = MatrixUtils.createRealMatrix(data);
         rowStochastic = MatrixUtils.createRealMatrix(data);
 
         int i = 0;
         LongIterator iter = items.iterator();
         while (iter.hasNext()) {
             long item = iter.nextLong();
-            prepareGenresMatrix.setRowVector(i, gDao.getItemGenre(item));
+            rowStochastic.setRowVector(i, gDao.getItemGenre(item));
             i++;
         }
     }
 
+    /**
+     * @return A matrix containing the row stochastic values of the matrix
+     * that contains the information about the item categorization,
+     * to be used by a {@code HIRItemScorer}.
+     */
+
     public RealMatrix RowStochastic() {
 
         for (int i = 0; i < itemSize; i++) {
-            RealVector forIter = prepareGenresMatrix.getRowVector(i);
+            RealVector forIter = rowStochastic.getRowVector(i);
 
             double sum = forIter.getL1Norm();
 

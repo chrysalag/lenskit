@@ -29,7 +29,9 @@ import javax.inject.Qualifier;
 import java.lang.annotation.*;
 
 /**
- * Created by chrysalag.
+ * Parameter for Direct Association Matrix.
+ * It determines how much is the ranking vector returned from
+ * {@code HIRItemScorer} affected by the coratings.
  */
 
 @Documented

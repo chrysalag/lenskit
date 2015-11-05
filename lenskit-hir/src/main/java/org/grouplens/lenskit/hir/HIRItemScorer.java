@@ -22,11 +22,10 @@
 package org.grouplens.lenskit.hir;
 
 /**
- * Created by chrysalag. Implements the Item Scorer of HIR algorithm.
+ * {@author Lagodimou Chrysanthi}
+ * An {@link ItemScorer} that implements the HIR algorithm.
  */
 
-import org.apache.commons.math3.linear.RealVector;
-import org.grouplens.lenskit.transform.normalize.UserVectorNormalizer;
 import org.grouplens.lenskit.vectors.MutableSparseVector;
 import org.lenskit.api.Result;
 import org.lenskit.api.ResultMap;
