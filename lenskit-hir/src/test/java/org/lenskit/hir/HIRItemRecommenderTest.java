@@ -30,21 +30,17 @@ import org.junit.rules.TemporaryFolder;
 import org.lenskit.LenskitConfiguration;
 import org.lenskit.LenskitRecommender;
 import org.lenskit.LenskitRecommenderEngine;
-import org.lenskit.api.ItemScorer;
-import org.lenskit.api.RatingPredictor;
-import org.lenskit.api.Recommender;
-import org.lenskit.api.RecommenderBuildException;
+import org.lenskit.api.*;
 import org.lenskit.baseline.BaselineScorer;
 import org.lenskit.baseline.ItemMeanRatingItemScorer;
 import org.lenskit.baseline.UserMeanBaseline;
 import org.lenskit.baseline.UserMeanItemScorer;
 import org.lenskit.basic.SimpleRatingPredictor;
 import org.lenskit.basic.TopNItemRecommender;
-import org.lenskit.data.dao.EventCollectionDAO;
-import org.lenskit.data.dao.EventDAO;
-import org.lenskit.data.dao.MapItemGenreDAO;
+import org.lenskit.data.dao.*;
 import org.lenskit.data.ratings.PreferenceDomain;
 import org.lenskit.data.ratings.Rating;
+import org.lenskit.util.collections.LongUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -58,14 +54,18 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 
 /**
- * Created by chrysalag.
+ * Tests if the HIR Item Recommender is created
+ * and properly configured.
  */
+
 public class HIRItemRecommenderTest {
     private LenskitRecommenderEngine engine;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
     MapItemGenreDAO gdao;
+    ItemDAO idao;
+    EventDAO dao;
 
     @Before
     public void createFile() throws IOException {
@@ -75,10 +75,9 @@ public class HIRItemRecommenderTest {
             str.println("0,\"Shawshank Redemption, The (1994)\",0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
             str.println("1,American History X (1998),0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
             str.println("2,Z (1969),0|0|0|0|0|0|0|1|0|0|0|0|1|0|0|1|0|0|0|0");
-            str.println("3,\"Good bye, Lenin! (2003)\",0|0|0|0|1|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("4,\"Pan's Labyrinth (Laberinto del fauno, El) (2006)\",0|0|0|0|0|0|0|1|1|0|0|0|0|0|0|1|0|0|0|0");
-            str.println("5,Seven Pounds (2008),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("6,Song of the Sea (2014),0|0|1|1|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("3,\"Pan's Labyrinth (Laberinto del fauno, El) (2006)\",0|0|0|0|0|0|0|1|1|0|0|0|0|0|0|1|0|0|0|0");
+            str.println("4,Seven Pounds (2008),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("5,Song of the Sea (2014),0|0|1|1|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0");
         } finally {
             str.close();
         }
@@ -88,20 +87,22 @@ public class HIRItemRecommenderTest {
     @SuppressWarnings("deprecation")
     @Before
     public void setup() throws RecommenderBuildException {
-        List<Rating> rs = new ArrayList<Rating>();
+        List<Rating> rs = new ArrayList<>();
         rs.add(Rating.create(1, 0, 2));
         rs.add(Rating.create(1, 1, 4));
         rs.add(Rating.create(2, 2, 5));
         rs.add(Rating.create(2, 3, 4));
 
-        EventDAO dao = new EventCollectionDAO(rs);
+        dao = new EventCollectionDAO(rs);
+        idao = new ItemListItemDAO(LongUtils.packedSet(0, 1, 2, 3, 4, 5));
+
 
         LenskitConfiguration config = new LenskitConfiguration();
         config.bind(EventDAO.class).to(dao);
+        config.bind(ItemDAO.class).to(idao);
         config.bind(MapItemGenreDAO.class).to(gdao);
         config.bind(ItemScorer.class).to(HIRItemScorer.class);
-        config.bind(PreferenceDomain.class).to(new PreferenceDomain(0, 5));
-        // factory.setComponent(UserVectorNormalizer.class, IdentityVectorNormalizer.class);
+        config.bind(PreferenceDomain.class).to(new PreferenceDomain(0, 1));
         config.bind(BaselineScorer.class, ItemScorer.class)
               .to(UserMeanItemScorer.class);
         config.bind(UserMeanBaseline.class, ItemScorer.class)
@@ -113,7 +114,6 @@ public class HIRItemRecommenderTest {
     @Test
     public void testHIRRecommenderEngineCreate() {
         try (Recommender rec = engine.createRecommender()) {
-
             assertThat(rec.getItemScorer(),
                        instanceOf(HIRItemScorer.class));
             RatingPredictor rp = rec.getRatingPredictor();

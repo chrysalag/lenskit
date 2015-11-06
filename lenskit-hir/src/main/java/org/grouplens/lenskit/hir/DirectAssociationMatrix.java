@@ -29,6 +29,11 @@ import org.apache.commons.math3.linear.RealVector;
 import org.grouplens.lenskit.vectors.*;
 import org.lenskit.data.dao.ItemDAO;
 
+/**
+ * A matrix to store the direct inter-item relationships
+ * that derive from the number of their coratings.
+ */
+
 public class DirectAssociationMatrix {
 
     private RealMatrix workMatrix;

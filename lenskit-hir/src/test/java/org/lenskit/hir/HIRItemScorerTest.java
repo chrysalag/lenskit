@@ -21,21 +21,15 @@
 
 package org.lenskit.hir;
 
-import it.unimi.dsi.fastutil.longs.LongSet;
-import org.grouplens.grapht.Component;
-import org.grouplens.grapht.Dependency;
-import org.grouplens.grapht.graph.DAGNode;
 import org.grouplens.lenskit.hir.HIRItemScorer;
-import org.grouplens.lenskit.hir.HIRModel;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.lenskit.LenskitConfiguration;
+import org.lenskit.LenskitRecommender;
 import org.lenskit.LenskitRecommenderEngine;
-import org.lenskit.api.ItemScorer;
-import org.lenskit.api.RecommenderBuildException;
-import org.lenskit.api.ResultMap;
+import org.lenskit.api.*;
 import org.lenskit.data.dao.*;
 import org.lenskit.data.ratings.PreferenceDomain;
 import org.lenskit.data.ratings.PreferenceDomainBuilder;
@@ -45,27 +39,21 @@ import org.lenskit.util.collections.LongUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
-import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 /**
- * Created by chrysalag.
+ * Tests HIR Item Scorer
  */
 
 public class HIRItemScorerTest {
 
-    private static final double EPSILON = 0.001;
+    private static final double EPSILON = 0.1;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
     MapItemGenreDAO gdao;
-    LongSet idao;
 
     @Before
     public void createFile() throws IOException {
@@ -83,13 +71,12 @@ public class HIRItemScorerTest {
             str.close();
         }
         gdao = MapItemGenreDAO.fromCSVFile(f);
-        idao = MapItemGenreDAO.fromCSVFile(f).getItemIds();
     }
 
    @Test
     public void testPredict1() throws RecommenderBuildException {
 
-        List<Rating> rs = new ArrayList<Rating>();
+        List<Rating> rs = new ArrayList<>();
             rs.add(Rating.create(1, 0, 4));
             rs.add(Rating.create(1, 4, 3));
             rs.add(Rating.create(1, 5, 1));
@@ -112,35 +99,51 @@ public class HIRItemScorerTest {
         LenskitConfiguration config = new LenskitConfiguration();
         config.bind(MapItemGenreDAO.class).to(gdao);
         config.bind(EventDAO.class).to(EventCollectionDAO.create(rs));
-        //config.addRoot(ItemDAO.class);
         config.bind(ItemDAO.class).to(idao);
         config.bind(ItemScorer.class).to(HIRItemScorer.class);
-        config.bind(PreferenceDomain.class).to(new PreferenceDomainBuilder(1, 5)
-                                                       .setPrecision(1)
+        config.bind(PreferenceDomain.class).to(new PreferenceDomainBuilder(0, 1)
+                                                       .setPrecision(EPSILON)
                                                        .build());
 
         ResultMap predictor1 = LenskitRecommenderEngine.build(config).createRecommender(config).getItemScorer().scoreWithDetails(1, items);
         ResultMap predictor2 = LenskitRecommenderEngine.build(config).createRecommender(config).getItemScorer().scoreWithDetails(2, items);
         ResultMap predictor3 = LenskitRecommenderEngine.build(config).createRecommender(config).getItemScorer().scoreWithDetails(3, items);
 
-
         assert predictor1.size() == 3;
         assert predictor2.size() == 3;
         assert predictor3.size() == 3;
 
-       /*2033/6000    11/2000    23/1000     7/1500  1009/3000     41/120
-       345/1697   33/10000    69/5000      3/625  1009/5000    123/200
+       /*
+       *         LenskitConfiguration configRec = new LenskitConfiguration();
+
+        configRec.bind(EventDAO.class).to(EventCollectionDAO.create(rs));
+        configRec.bind(MapItemGenreDAO.class).to(gdao);
+        configRec.bind(ItemDAO.class).to(idao);
+        configRec.bind(ItemScorer.class).to(HIRItemScorer.class);
+        configRec.bind(PreferenceDomain.class).to(new PreferenceDomain(0, 1));
+
+
+        LenskitRecommenderEngine engine = LenskitRecommenderEngine.build(configRec);
+        LenskitRecommender rec = engine.createRecommender();
+        ItemRecommender irec = rec.getItemRecommender();
+        List<Long> recs1 = irec.recommend(1);
+        List<Result> recs2 = irec.recommendWithDetails(2, 3, null, null);
+        List<Result> recs3 = irec.recommendWithDetails(3, 3, null, null);
 */
 
-       assertEquals(30.0 / 400.0, predictor1.getScore(1), 0.1);
-       assertEquals(27.0 / 800.0, predictor1.getScore(2), 0.1);
-       assertEquals(7.0 / 1600.0, predictor1.getScore(3), 0.1);
-       assertEquals(11.0 / 2000.0, predictor2.getScore(1), 0.1);
-       assertEquals(23.0 / 1000.0, predictor2.getScore(2), 0.1);
-       assertEquals(7.0 / 1500.0, predictor2.getScore(3), 0.1);
-       assertEquals(33.0 / 10000.0, predictor3.getScore(1), 0.1);
-       assertEquals(69.0 / 5000.0, predictor3.getScore(2), 0.1);
-       assertEquals(3.0 / 625.0, predictor3.getScore(3), 0.1);
+        /*2033/6000    11/2000    23/1000     7/1500  1009/3000     41/120
+        345/1697   33/10000    69/5000      3/625  1009/5000    123/200
+        */
+
+        assertEquals(30.0 / 400.0, predictor1.getScore(1), EPSILON);
+        assertEquals(27.0 / 800.0, predictor1.getScore(2), EPSILON);
+        assertEquals(7.0 / 1600.0, predictor1.getScore(3), EPSILON);
+        assertEquals(11.0 / 2000.0, predictor2.getScore(1), EPSILON);
+        assertEquals(23.0 / 1000.0, predictor2.getScore(2), EPSILON);
+        assertEquals(7.0 / 1500.0, predictor2.getScore(3), EPSILON);
+        assertEquals(33.0 / 10000.0, predictor3.getScore(1), EPSILON);
+        assertEquals(69.0 / 5000.0, predictor3.getScore(2), EPSILON);
+        assertEquals(3.0 / 625.0, predictor3.getScore(3), EPSILON);
 
 
 

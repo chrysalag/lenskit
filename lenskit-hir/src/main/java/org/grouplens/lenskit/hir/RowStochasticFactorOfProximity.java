@@ -29,6 +29,12 @@ import org.apache.commons.math3.linear.RealVector;
 import org.lenskit.data.dao.ItemDAO;
 import org.lenskit.data.dao.ItemGenreDAO;
 
+/**
+ * A matrix to store the first factor of the matrix
+ * that contains the inter-item relationships
+ * that derive from their categorization.
+ */
+
 public class RowStochasticFactorOfProximity {
 
     private RealMatrix rowStochastic;

@@ -49,7 +49,7 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 /**
- * Created by chrysalag.
+ * Tests HIR Model Builder
  */
 
 @SuppressWarnings("deprecation")
