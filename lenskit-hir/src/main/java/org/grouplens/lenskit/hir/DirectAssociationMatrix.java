@@ -66,7 +66,7 @@ public class DirectAssociationMatrix {
         if (id1 == id2) {
             workMatrix.setEntry((int) id1, (int)id2, 0);
         } else {
-            int coratings = 0;
+            long coratings = 0;
             for (Pair<VectorEntry,VectorEntry> pair: Vectors.fastIntersect(itemVec1, itemVec2)) {
                 coratings++;
             }

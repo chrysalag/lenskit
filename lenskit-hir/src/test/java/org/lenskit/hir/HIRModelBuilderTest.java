@@ -23,8 +23,6 @@ package org.lenskit.hir;
 
 import org.grouplens.lenskit.data.history.RatingVectorUserHistorySummarizer;
 import org.grouplens.lenskit.data.history.UserHistorySummarizer;
-import org.grouplens.lenskit.data.text.Formats;
-import org.grouplens.lenskit.data.text.TextEventDAO;
 import org.grouplens.lenskit.hir.HIRModel;
 import org.grouplens.lenskit.hir.HIRModelBuilder;
 import org.grouplens.lenskit.transform.normalize.DefaultUserVectorNormalizer;
@@ -55,14 +53,11 @@ import static org.junit.Assert.*;
 @SuppressWarnings("deprecation")
 public class HIRModelBuilderTest {
 
-    public static final double EPSILON = 1.0e-6;
-
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
     MapItemGenreDAO gdao;
     MapItemNameDAO idao;
     Collection<Long> items = new HashSet<>();
-    EventDAO dao1, dao2;
     List<Rating> rs1 = new ArrayList<>();
     List<Rating> rs2 = new ArrayList<>();
 
@@ -92,44 +87,16 @@ public class HIRModelBuilderTest {
 
     @Before
     public void createRating1() throws IOException {
-        File r1 = folder.newFile("ratings1.csv");
-        PrintStream str = new PrintStream(r1);
         rs1.add(Rating.create(1,0,5));
         rs1.add(Rating.create(1,2,5));
         rs1.add(Rating.create(2,0,4));
         rs1.add(Rating.create(2,2,4));
         rs1.add(Rating.create(3,1,5));
         rs1.add(Rating.create(4,1,1));
-        try {
-            str.println("1,0,5,847117005");
-            str.println("1,2,5,847117006");
-            str.println("2,0,4,847117007");
-            str.println("2,2,4,847117008");
-            str.println("3,1,5,847117009");
-            str.println("4,1,1,847117010");
-        } finally {
-            str.close();
-        }
-        dao1 = TextEventDAO.create(r1, Formats.movieLensLatest());
     }
 
     @Before
     public void createRating2() throws IOException {
-        File r = folder.newFile("ratings2.csv");
-        PrintStream str = new PrintStream(r);
-        try {
-            str.println("1,0,4,847117005");
-            str.println("1,4,3,847116893");
-            str.println("1,5,1,847641973");
-            str.println("2,0,4,847116936");
-            str.println("2,4,4,847641938");
-            str.println("2,5,4,847642118");
-            str.println("3,0,4,847642048");
-            str.println("3,4,1,847641919");
-            str.println("3,5,3,847116787");
-        } finally {
-            str.close();
-        }
         rs2.add(Rating.create(1, 0, 4));
         rs2.add(Rating.create(1, 4, 3));
         rs2.add(Rating.create(1, 5, 1));
@@ -139,24 +106,10 @@ public class HIRModelBuilderTest {
         rs2.add(Rating.create(3, 0, 1));
         rs2.add(Rating.create(3, 4, 1));
         rs2.add(Rating.create(3, 5, 3));
-
-        dao2 = TextEventDAO.create(r, Formats.movieLensLatest());
-        //dao2 = TextEventDAO.ratings(r, ",");
     }
 
     private HIRModel getModel(List<Rating> rs) {
         EventDAO dao = EventCollectionDAO.create(rs);
-        UserEventDAO udao = new PrefetchingUserEventDAO(dao);
-        ItemDAO idao = new ItemListItemDAO(LongUtils.packedSet(0, 1, 2, 3, 4, 5));
-        UserHistorySummarizer summarizer = new RatingVectorUserHistorySummarizer();
-        ItemItemBuildContextProvider contextFactory = new ItemItemBuildContextProvider(
-                udao, new DefaultUserVectorNormalizer(), summarizer);
-        HIRModelBuilder provider = new HIRModelBuilder(idao, gdao, contextFactory.get());
-        return provider.get();
-    }
-
-    private HIRModel getModel2() {
-        EventDAO dao = EventCollectionDAO.create(rs2);
         UserEventDAO udao = new PrefetchingUserEventDAO(dao);
         ItemDAO idao = new ItemListItemDAO(LongUtils.packedSet(0, 1, 2, 3, 4, 5));
         UserHistorySummarizer summarizer = new RatingVectorUserHistorySummarizer();
@@ -231,7 +184,7 @@ public class HIRModelBuilderTest {
     @Test
     public void testBuild2() {
 
-        HIRModel model2 = getModel2();
+        HIRModel model2 = getModel(rs2);
 
         MutableSparseVector msv0 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
         MutableSparseVector msv1 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
@@ -245,7 +198,6 @@ public class HIRModelBuilderTest {
         MutableSparseVector pv2 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
         MutableSparseVector pv3 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
         MutableSparseVector pv4 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
-        MutableSparseVector pv5 = MutableSparseVector.create(0, 1, 2, 3, 4, 5);
 
         msv0.set(0, 0);
         msv0.set(1, 0);
@@ -289,15 +241,6 @@ public class HIRModelBuilderTest {
         msv5.set(4, 0.5);
         msv5.set(5, 0);
 
-        /* P =
-
-       7/20       7/20       1/10       1/10       1/10          0
-       7/20       7/20       1/10       1/10       1/10          0
-       1/15       1/15      17/30       7/30       1/15          0
-       1/15       1/15       7/30        2/5       1/15        1/6
-        1/5        1/5        1/5        1/5        1/5          0
-          0          0          0        1/6          0        5/6  */
-
         pv0.set(0, 7 / 20.0);
         pv0.set(1, 7 / 20.0);
         pv0.set(2, 1 / 10.0);
@@ -333,13 +276,6 @@ public class HIRModelBuilderTest {
         pv4.set(4, 1 / 5.0);
         pv4.set(5, 0);
 
-        pv5.set(0, 0.0);
-        pv5.set(1, 0.0);
-        pv5.set(2, 0.0);
-        pv5.set(3, 1.0 / 6.0);
-        pv5.set(4, 0.0);
-        pv5.set(5, 5.0 / 6.0);
-
         assertEquals(msv0, model2.getCoratingsVector(0, items));
         assertEquals(msv1, model2.getCoratingsVector(1, items));
         assertEquals(msv2, model2.getCoratingsVector(2, items));
@@ -352,50 +288,5 @@ public class HIRModelBuilderTest {
         assertEquals(pv2, model2.getProximityVector(2, items));
         assertEquals(pv3, model2.getProximityVector(3, items));
         assertEquals(pv4, model2.getProximityVector(4, items));
- //       assertEquals(pv5, model2.getProximityVector(5, items));
-
-        assertEquals((long)pv0.get(0), (long)model2.getProximityVector(0, items).get(0));
-        assertEquals((long)pv0.get(1), (long)model2.getProximityVector(0, items).get(1));
-        assertEquals((long)pv0.get(2), (long)model2.getProximityVector(0, items).get(2));
-        assertEquals((long)pv0.get(3), (long)model2.getProximityVector(0, items).get(3));
-        assertEquals((long)pv0.get(4), (long)model2.getProximityVector(0, items).get(4));
-        assertEquals((long)pv0.get(5), (long)model2.getProximityVector(0, items).get(5));
-
-        assertEquals((long)pv1.get(0), (long)model2.getProximityVector(1, items).get(0));
-        assertEquals((long)pv1.get(1), (long)model2.getProximityVector(1, items).get(1));
-        assertEquals((long)pv1.get(2), (long)model2.getProximityVector(1, items).get(2));
-        assertEquals((long)pv1.get(3), (long)model2.getProximityVector(1, items).get(3));
-        assertEquals((long)pv1.get(4), (long)model2.getProximityVector(1, items).get(4));
-        assertEquals((long)pv1.get(5), (long)model2.getProximityVector(1, items).get(5));
-
-        assertEquals((long)pv2.get(0), (long)model2.getProximityVector(2, items).get(0));
-        assertEquals((long)pv2.get(1), (long)model2.getProximityVector(2, items).get(1));
-        assertEquals((long)pv2.get(2), (long)model2.getProximityVector(2, items).get(2));
-        assertEquals((long)pv2.get(3), (long)model2.getProximityVector(2, items).get(3));
-        assertEquals((long)pv2.get(4), (long)model2.getProximityVector(2, items).get(4));
-        assertEquals((long)pv2.get(5), (long)model2.getProximityVector(2, items).get(5));
-
-        assertEquals((long)pv3.get(0), (long)model2.getProximityVector(3, items).get(0));
-        assertEquals((long)pv3.get(1), (long)model2.getProximityVector(3, items).get(1));
-        assertEquals((long)pv3.get(2), (long)model2.getProximityVector(3, items).get(2));
-        assertEquals((long)pv3.get(3), (long)model2.getProximityVector(3, items).get(3));
-        assertEquals((long)pv3.get(4), (long)model2.getProximityVector(3, items).get(4));
-        assertEquals((long)pv3.get(5), (long)model2.getProximityVector(3, items).get(5));
-
-        assertEquals((long)pv4.get(0), (long)model2.getProximityVector(4, items).get(0));
-        assertEquals((long)pv4.get(1), (long)model2.getProximityVector(4, items).get(1));
-        assertEquals((long)pv4.get(2), (long)model2.getProximityVector(4, items).get(2));
-        assertEquals((long)pv4.get(3), (long)model2.getProximityVector(4, items).get(3));
-        assertEquals((long)pv4.get(4), (long)model2.getProximityVector(4, items).get(4));
-        assertEquals((long)pv4.get(5), (long)model2.getProximityVector(4, items).get(5));
-
-        assertEquals((long)pv5.get(0), (long)model2.getProximityVector(5, items).get(0));
-        assertEquals((long)pv5.get(1), (long)model2.getProximityVector(5, items).get(1));
-        assertEquals((long)pv5.get(2), (long)model2.getProximityVector(5, items).get(2));
-        assertEquals((long)pv5.get(3), (long)model2.getProximityVector(5, items).get(3));
-        assertEquals((long)pv5.get(4), (long)model2.getProximityVector(5, items).get(4));
-        assertEquals((long)pv5.get(5), (long)model2.getProximityVector(5, items).get(5));
-
     }
-
 }

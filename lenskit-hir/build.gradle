@@ -37,11 +37,12 @@ apply from: "$rootDir/gradle/maven.gradle"
 apply from: "$rootDir/gradle/test-utils.gradle"
 
 dependencies {
+    compile localGroovy()
     compile project(':lenskit-core')
     compile project(':lenskit-knn')
 }
 
 meta {
     name 'LensKit HIR'
-    description 'HIR recommenders for LensKit'
+    description 'HIR recommender for LensKit'
 }

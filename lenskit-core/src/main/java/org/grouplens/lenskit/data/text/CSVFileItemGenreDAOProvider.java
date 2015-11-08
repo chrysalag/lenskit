@@ -19,6 +19,7 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+
 package org.grouplens.lenskit.data.text;
 
 import org.lenskit.data.dao.DataAccessException;
@@ -30,23 +31,26 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Created by chrysalag.
+ * Provider for {@link org.lenskit.data.dao.ItemListItemDAO}
+ * that reads a list of item IDs from a file, one per line.
+ *
+ * @since 2.1
  */
 
 public class CSVFileItemGenreDAOProvider implements Provider<MapItemGenreDAO> {
-    private final File itemFile;
+   private final File itemFile;
 
-    @Inject
-    public CSVFileItemGenreDAOProvider(@ItemFile File file) {
-        itemFile = file;
-    }
+   @Inject
+   public CSVFileItemGenreDAOProvider(@ItemFile File file) {
+            itemFile = file;
+        }
 
-    @Override
-    public MapItemGenreDAO get() {
+   @Override
+   public MapItemGenreDAO get() {
         try {
             return MapItemGenreDAO.fromCSVFile(itemFile);
         } catch (IOException e) {
             throw new DataAccessException("error reading " + itemFile, e);
         }
-    }
+   }
 }

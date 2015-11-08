@@ -52,14 +52,12 @@ public class MapItemGenreDAOTest {
         File f = folder.newFile("genres.csv");
         PrintStream str = new PrintStream(f);
         try {
-            str.println("318,\"Shawshank Redemption, The (1994)\",0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("2329,American History X (1998),0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("5475,Z (1969),0|0|0|0|0|0|0|1|0|0|0|0|1|0|0|1|0|0|0|0");
-            str.println("7323,\"Good bye, Lenin! (2003)\",0|0|0|0|1|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("48394,\"Pan's Labyrinth (Laberinto del fauno, El) (2006)\",0|0|0|0|0|0|0|1|1|0|0|0|0|0|0|1|0|0|0|0");
-            str.println("64716,Seven Pounds (2008),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("117444,Song of the Sea (2014),0|0|1|1|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0");
-            str.println("140214,Triple Dog (2010),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|1|0|0|0|0");
+            str.println("0,\"Shawshank Redemption, The (1994)\",0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("1,American History X (1998),0|0|0|0|0|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("2,Z (1969),0|0|0|0|0|0|0|1|0|0|0|0|1|0|0|1|0|0|0|0");
+            str.println("3,\"Pan's Labyrinth (Laberinto del fauno, El) (2006)\",0|0|0|0|0|0|0|1|1|0|0|0|0|0|0|1|0|0|0|0");
+            str.println("4,Seven Pounds (2008),0|0|0|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0|0");
+            str.println("5,Song of the Sea (2014),0|0|1|1|0|0|0|0|1|0|0|0|0|0|0|0|0|0|0|0");
         } finally {
             str.close();
         }
@@ -68,7 +66,7 @@ public class MapItemGenreDAOTest {
 
     @Test
     public void testMissingItem() {
-        assertThat(gdao.getItemGenre(5), nullValue());
+        assertThat(gdao.getItemGenre(6), nullValue());
     }
 
     @Test
@@ -82,15 +80,15 @@ public class MapItemGenreDAOTest {
         double[] testVec2 = {0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0};
         RealVector testRealVector1 = MatrixUtils.createRealVector(testVec1);
         RealVector testRealVector2 = MatrixUtils.createRealVector(testVec2);
-        assertThat(gdao.getItemGenre(318), equalTo(testRealVector1));
-        assertThat(gdao.getItemGenre(117444), equalTo(testRealVector2));
+        assertThat(gdao.getItemGenre(0), equalTo(testRealVector1));
+        assertThat(gdao.getItemGenre(5), equalTo(testRealVector2));
         assertThat(testRealVector1.getDimension(), equalTo(gdao.getGenreSize()));
-        assertThat(gdao.getItemGenre(318).getDimension(), equalTo(gdao.getGenreSize()));
+        assertThat(gdao.getItemGenre(0).getDimension(), equalTo(gdao.getGenreSize()));
         assertThat(testVec1.length, equalTo(gdao.getGenreSize()));
     }
 
     @Test
     public void testItemIds() {
-        assertThat(gdao.getItemIds(), containsInAnyOrder(318L, 2329L, 5475L, 7323L, 48394L, 64716L, 117444L, 140214L));
+        assertThat(gdao.getItemIds(), containsInAnyOrder(0L, 1L, 2L, 3L, 4L, 5L));
     }
 }

@@ -96,7 +96,7 @@ public class HIRItemScorer extends AbstractItemScorer {
             final long key = e.getKey();
             final double value = e.getValue();
             preferenceVector.set(key, value);
-            total = total + value;
+            total += value;
         }
 
         if (total != 0) {
