@@ -87,7 +87,6 @@ public class HIRItemScorer extends AbstractItemScorer {
         SparseVector historyVector = RatingVectorUserHistorySummarizer.makeRatingVector(history);
 
         List<Result> results = new ArrayList<>();
-        List<Result> results1 = new ArrayList<>();
 
         MutableSparseVector preferenceVector = MutableSparseVector.create(idao.getItemIds(), 0);
 
@@ -131,11 +130,7 @@ public class HIRItemScorer extends AbstractItemScorer {
             }
         }
 
-        if (rankingVector.sum() < 1.1 && rankingVector.sum() > 0.9) {
-            return Results.newResultMap(results);
-        } else {
-            return Results.newResultMap(results1);
-        }
+        return Results.newResultMap(results);
 
     }
 
