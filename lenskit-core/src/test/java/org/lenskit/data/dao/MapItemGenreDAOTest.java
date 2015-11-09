@@ -39,7 +39,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 /**
- * Created by chrysalag.
+ * Tests MapItemGenreDAO.
  */
 
 public class MapItemGenreDAOTest {
