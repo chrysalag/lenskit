@@ -33,8 +33,6 @@ import java.io.IOException;
 /**
  * Provider for {@link org.lenskit.data.dao.ItemListItemDAO}
  * that reads a list of item IDs from a file, one per line.
- *
- * @since 2.1
  */
 
 public class CSVFileItemGenreDAOProvider implements Provider<MapItemGenreDAO> {
