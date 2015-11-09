@@ -56,7 +56,8 @@ public interface ItemGenreDAO {
 
     /**
      * Get the number of genres in the dataset.
-     * @return the number of genres in the dataset.
+     * @return the number of genres
+     * in the dataset.
      */
     int getGenreSize();
 }
