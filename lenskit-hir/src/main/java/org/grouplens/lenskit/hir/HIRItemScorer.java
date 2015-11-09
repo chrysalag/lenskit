@@ -21,10 +21,6 @@
 
 package org.grouplens.lenskit.hir;
 
-/**
- * An {@link ItemScorer} that implements the HIR algorithm.
- */
-
 import org.grouplens.lenskit.vectors.MutableSparseVector;
 import org.lenskit.api.Result;
 import org.lenskit.api.ResultMap;
