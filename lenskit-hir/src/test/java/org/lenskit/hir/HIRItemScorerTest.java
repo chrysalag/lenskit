@@ -51,6 +51,7 @@ public class HIRItemScorerTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
     MapItemGenreDAO gdao;
+    private static final double EPSILON = 1.0e-6;
 
     @Before
     public void createFile() throws IOException {
@@ -119,14 +120,21 @@ public class HIRItemScorerTest {
         assert predictor2.size() == 3;
         assert predictor3.size() == 3;
 
-        assertEquals(30.0 / 400.0, predictor1.getScore(1), 0.1);
-        assertEquals(27.0 / 800.0, predictor1.getScore(2), 0.1);
-        assertEquals(7.0 / 1600.0, predictor1.getScore(3), 0.1);
-        assertEquals(11.0 / 2000.0, predictor2.getScore(1), 0.1);
-        assertEquals(23.0 / 1000.0, predictor2.getScore(2), 0.1);
-        assertEquals(7.0 / 1500.0, predictor2.getScore(3), 0.1);
-        assertEquals(33.0 / 10000.0, predictor3.getScore(1), 0.1);
-        assertEquals(69.0 / 5000.0, predictor3.getScore(2), 0.1);
-        assertEquals(3.0 / 625.0, predictor3.getScore(3), 0.1);
+
+/*  Rank =
+         11/40       3/40       3/80      7/160      21/80     49/160
+        173/600     11/200      3/100      7/150     79/300      19/60
+        293/1000    33/1000      9/500      6/125    139/500     33/100
+*/
+
+        assertEquals(3.0 / 40.0, predictor1.getScore(1), EPSILON);
+        assertEquals(3.0 / 80.0, predictor1.getScore(2), EPSILON);
+        assertEquals(7.0 / 160.0, predictor1.getScore(3), EPSILON);
+        assertEquals(11.0 / 200.0, predictor2.getScore(1), EPSILON);
+        assertEquals(3.0 / 100.0, predictor2.getScore(2), EPSILON);
+        assertEquals(7.0 / 150.0, predictor2.getScore(3), EPSILON);
+        assertEquals(33.0 / 1000.0, predictor3.getScore(1), EPSILON);
+        assertEquals(9.0 / 500.0, predictor3.getScore(2), EPSILON);
+        assertEquals(6.0 / 125.0, predictor3.getScore(3), EPSILON);
     }
 }
